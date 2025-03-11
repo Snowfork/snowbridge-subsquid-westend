@@ -36,11 +36,6 @@ module.exports = {
       script: "./lib/polkadot/parachains/acala/main.js",
     },
     {
-      name: "mythos",
-      node_args: "--require=dotenv/config",
-      script: "./lib/polkadot/parachains/mythos/main.js",
-    },
-    {
       name: "graphql",
       script: "./node_modules/.bin/squid-graphql-server",
     },
