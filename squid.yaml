@@ -56,7 +56,7 @@ deploy:
 scale:
   addons:
     postgres:
-      storage: 10G
+      storage: 20G
       profile: small
   processor:
     profile: medium
