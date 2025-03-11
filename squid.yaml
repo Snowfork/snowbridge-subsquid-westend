@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: snowbridge-subsquid-polkadot
-version: 2
+version: 1
 description: Snowbridge squid for Polkadot
 build:
 deploy:

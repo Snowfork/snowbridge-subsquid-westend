@@ -58,7 +58,7 @@
       ]
     },
     "process:ethereum": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for ethereum mainnet",
       "deps": ["build"],
       "cmd": [
         "node",
@@ -67,7 +67,7 @@
       ]
     },
     "process:ethereum:westend": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for Westend Sepolia",
       "deps": ["build"],
       "cmd": [
         "node",
@@ -109,7 +109,7 @@
       ]
     },
     "process:bridgehub": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for BridgeHub",
       "deps": ["build"],
       "cmd": [
         "node",
@@ -118,7 +118,7 @@
       ]
     },
     "process:bridgehub:westend": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for Westend BridgeHub",
       "deps": ["build"],
       "cmd": [
         "node",
@@ -160,7 +160,7 @@
       ]
     },
     "process:assethub": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for AssetHub",
       "deps": ["build"],
       "cmd": [
         "node",
@@ -169,7 +169,7 @@
       ]
     },
     "process:assethub:westend": {
-      "description": "Load .env and start the squid processor",
+      "description": "start the squid processor for Westend AssetHub",
       "deps": ["build"],
       "cmd": [
         "node",
