@@ -52,24 +52,28 @@ const matchToEthereumAsset = (
       );
       let amount = asset.fun.value;
       if (
-        asset.id.interior.__kind == "X2" &&
+        asset.id.interior.__kind == "X1" &&
         asset.id.interior.value[0].__kind == "GlobalConsensus" &&
         asset.id.interior.value[0].value.__kind == "Ethereum"
       ) {
+        // Native Ether
+        ethereumAsset = {
+          address: "0x0000000000000000000000000000000000000000",
+          amount,
+          location,
+        };
+      } else if (
+        asset.id.interior.__kind == "X2" &&
+        asset.id.interior.value[0].__kind == "GlobalConsensus" &&
+        asset.id.interior.value[0].value.__kind == "Ethereum" &&
+        asset.id.interior.value[1].__kind == "AccountKey20"
+      ) {
         // ENA
-        if (asset.id.interior.value[1].__kind == "AccountKey20") {
-          ethereumAsset = {
-            address: asset.id.interior.value[1].key,
-            amount,
-            location,
-          };
-        } else {
-          ethereumAsset = {
-            address: "0x0000000000000000000000000000000000000000",
-            amount,
-            location,
-          };
-        }
+        ethereumAsset = {
+          address: asset.id.interior.value[1].key,
+          amount,
+          location,
+        };
       } else {
         // PNA
         ethereumAsset = {
