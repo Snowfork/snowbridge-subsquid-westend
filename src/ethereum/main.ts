@@ -10,7 +10,6 @@ import * as pnaToken from "./abi/Token";
 import { processor, GATEWAY_ADDRESS } from "./processor";
 import { TransferStatusEnum } from "../common";
 import { Context } from "./processor";
-import { tokens } from "../parachains/hydration/types/events";
 
 processor.run(
   new TypeormDatabase({ supportHotBlocks: true, stateSchema: "eth_processor" }),
