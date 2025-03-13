@@ -56,6 +56,17 @@ const matchToEthereumAsset = (
       );
       let amount = asset.fun.value;
       if (
+        asset.id.interior.__kind == "X1" &&
+        asset.id.interior.value[0].__kind == "GlobalConsensus" &&
+        asset.id.interior.value[0].value.__kind == "Ethereum"
+      ) {
+        // Native Ether
+        ethereumAsset = {
+          address: "0x0000000000000000000000000000000000000000",
+          amount,
+          location,
+        };
+      } else if (
         asset.id.interior.__kind == "X2" &&
         asset.id.interior.value[0].__kind == "GlobalConsensus" &&
         asset.id.interior.value[0].value.__kind == "Ethereum" &&
