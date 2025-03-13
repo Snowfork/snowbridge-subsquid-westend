@@ -58,15 +58,22 @@ const matchToEthereumAsset = (
       if (
         asset.id.interior.__kind == "X2" &&
         asset.id.interior.value[0].__kind == "GlobalConsensus" &&
-        asset.id.interior.value[0].value.__kind == "Ethereum" &&
-        asset.id.interior.value[1].__kind == "AccountKey20"
+        asset.id.interior.value[0].value.__kind == "Ethereum"
       ) {
         // ENA
-        ethereumAsset = {
-          address: asset.id.interior.value[1].key,
-          amount,
-          location,
-        };
+        if (asset.id.interior.value[1].__kind == "AccountKey20") {
+          ethereumAsset = {
+            address: asset.id.interior.value[1].key,
+            amount,
+            location,
+          };
+        } else {
+          ethereumAsset = {
+            address: "0x000000000000000000000000000000000000000",
+            amount,
+            location,
+          };
+        }
       } else {
         // PNA
         ethereumAsset = {
