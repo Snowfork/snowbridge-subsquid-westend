@@ -23,8 +23,18 @@ async function processOutboundEvents(ctx: Context) {
   let outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
     transfersToPolkadot: TransferStatusToPolkadot[] = [];
   for (let c of ctx.blocks) {
-    let tokenSent;
-    let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
+    let tokensSent: {
+      id: string;
+      blockNumber: number;
+      txHash: string;
+      timestamp: Date;
+      tokenAddress: string;
+      senderAddress: string;
+      destinationParaId: number;
+      destinationAddress: string;
+      amount: bigint;
+    }[] = [];
+    let outboundMessagesAccepted: OutboundMessageAcceptedOnEthereum[] = [];
     for (let log of c.logs) {
       if (
         log.address == GATEWAY_ADDRESS &&
@@ -34,7 +44,7 @@ async function processOutboundEvents(ctx: Context) {
         if (log.topics[0] == gateway.events.TokenSent.topic) {
           let { token, sender, destinationChain, destinationAddress, amount } =
             gateway.events.TokenSent.decode(log);
-          tokenSent = {
+          const tokenSent = {
             id: log.id,
             blockNumber: c.header.height,
             txHash: log.transactionHash,
@@ -45,54 +55,64 @@ async function processOutboundEvents(ctx: Context) {
             destinationAddress: destinationAddress.data,
             amount: amount,
           };
+          tokensSent.push(tokenSent);
         } else if (
           log.topics[0] == gateway.events.OutboundMessageAccepted.topic
         ) {
           let { channelID, messageID, nonce } =
             gateway.events.OutboundMessageAccepted.decode(log);
-          outboundMessageAccepted = new OutboundMessageAcceptedOnEthereum({
-            id: log.id,
-            blockNumber: c.header.height,
-            txHash: log.transactionHash,
-            timestamp: new Date(c.header.timestamp),
-            channelId: channelID,
-            messageId: messageID.toString().toLowerCase(),
-            nonce: Number(nonce),
-          });
+          outboundMessagesAccepted.push(
+            new OutboundMessageAcceptedOnEthereum({
+              id: log.id,
+              blockNumber: c.header.height,
+              txHash: log.transactionHash,
+              timestamp: new Date(c.header.timestamp),
+              channelId: channelID,
+              messageId: messageID.toString().toLowerCase(),
+              nonce: Number(nonce),
+            })
+          );
         }
       }
     }
+
+    outboundMessagesAccepted.map((o, idx) => tokensSent);
+    const zippedEvents = tokensSent
+      .map((ts) => ({
+        ts,
+        o: outboundMessagesAccepted.find((o) => ts.txHash === o.txHash)!,
+      }))
+      .filter(({ ts, o }) => o !== undefined);
+
     // Merge OutboundMessageAccepted event with TokenSent event to generate the TransferStatusToPolkadot
-    if (
-      outboundMessageAccepted! &&
-      tokenSent! &&
-      tokenSent.txHash == outboundMessageAccepted.txHash
-    ) {
-      outboundMessages.push(outboundMessageAccepted);
-      let transferToPolkadot = await ctx.store.findOneBy(
-        TransferStatusToPolkadot,
-        {
-          id: outboundMessageAccepted.messageId,
-        }
-      );
-      if (!transferToPolkadot) {
-        transfersToPolkadot.push(
-          new TransferStatusToPolkadot({
-            id: outboundMessageAccepted.messageId,
-            messageId: outboundMessageAccepted.messageId,
-            txHash: outboundMessageAccepted.txHash,
-            blockNumber: c.header.height,
-            timestamp: new Date(c.header.timestamp),
-            channelId: outboundMessageAccepted.channelId,
-            nonce: outboundMessageAccepted.nonce,
-            tokenAddress: tokenSent.tokenAddress,
-            senderAddress: tokenSent.senderAddress,
-            destinationParaId: tokenSent.destinationParaId,
-            destinationAddress: tokenSent.destinationAddress,
-            amount: tokenSent.amount,
-            status: TransferStatusEnum.Pending,
-          })
+    if (zippedEvents.length > 0) {
+      for (const { ts, o } of zippedEvents) {
+        outboundMessages.push(o);
+        let transferToPolkadot = await ctx.store.findOneBy(
+          TransferStatusToPolkadot,
+          {
+            id: o.messageId,
+          }
         );
+        if (!transferToPolkadot) {
+          transfersToPolkadot.push(
+            new TransferStatusToPolkadot({
+              id: o.messageId,
+              messageId: o.messageId,
+              txHash: o.txHash,
+              blockNumber: c.header.height,
+              timestamp: new Date(c.header.timestamp),
+              channelId: o.channelId,
+              nonce: o.nonce,
+              tokenAddress: ts.tokenAddress,
+              senderAddress: ts.senderAddress,
+              destinationParaId: ts.destinationParaId,
+              destinationAddress: ts.destinationAddress,
+              amount: ts.amount,
+              status: TransferStatusEnum.Pending,
+            })
+          );
+        }
       }
     }
   }
