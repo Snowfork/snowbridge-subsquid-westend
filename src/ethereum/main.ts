@@ -56,7 +56,7 @@ async function processOutboundEvents(ctx: Context) {
             destinationAddress: destinationAddress.data,
             amount: amount,
           };
-          tokensSent.push();
+          tokensSent.push(tokenSent);
         } else if (
           log.topics[0] == gateway.events.OutboundMessageAccepted.topic
         ) {
