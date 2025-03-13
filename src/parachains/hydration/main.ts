@@ -69,7 +69,7 @@ const matchToEthereumAsset = (
           };
         } else {
           ethereumAsset = {
-            address: "0x000000000000000000000000000000000000000",
+            address: "0x0000000000000000000000000000000000000000",
             amount,
             location,
           };
