@@ -127,6 +127,12 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
                   tokenAddress = val.key;
                 }
               }
+              if (
+                instruction0.__kind == "WithdrawAsset" &&
+                asset.id.interior.__kind == "Here"
+              ) {
+                tokenAddress = "0x0000000000000000000000000000000000000000";
+              }
             }
           }
 
