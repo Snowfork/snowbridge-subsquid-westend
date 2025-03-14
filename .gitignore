@@ -9,5 +9,5 @@
 /.idea
 data
 db
-.env*
-!.env.example
+.env
+.cloud.env.*

@@ -2,23 +2,51 @@ module.exports = {
   apps: [
     {
       name: "staging-ethereum",
-      node_args: "--require=dotenv/config",
-      script: "./lib/ethereum/main.js",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/ethereum/main.ts",
     },
     {
       name: "staging-bridgehub",
-      node_args: "--require=dotenv/config",
-      script: "./lib/bridgehub/main.js",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/bridgehub/main.ts",
     },
     {
       name: "staging-assethub",
-      node_args: "--require=dotenv/config",
-      script: "./lib/assethub/main.js",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/assethub/main.ts",
     },
     {
       name: "staging-hydration",
-      node_args: "--require=dotenv/config",
-      script: "./lib/parachains/hydration/main.js",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/parachains/hydration/main.ts",
+    },
+    {
+      name: "staging-moonbeam",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/parachains/moonbeam/main.ts",
+    },
+    {
+      name: "staging-bifrost",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/parachains/bifrost/main.ts",
+    },
+    {
+      name: "staging-acala",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/parachains/acala/main.ts",
+    },
+    {
+      name: "staging-mythos",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/polkadot/parachains/mythos/main.ts",
     },
     {
       name: "staging-graphql",
@@ -26,8 +54,9 @@ module.exports = {
     },
     {
       name: "staging-postprocess",
-      node_args: "--require=dotenv/config",
-      script: "./lib/postprocess/cron.js",
+      interpreter: "node",
+      node_args: "--require=ts-node/register --require=dotenv/config",
+      script: "./src/postprocess/cron.ts",
     },
   ],
 };
