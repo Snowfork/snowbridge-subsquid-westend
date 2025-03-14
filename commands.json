@@ -62,8 +62,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/ethereum/main.js"
+        "src/polkadot/ethereum/main.js"
       ]
     },
     "process:ethereum:westend": {
@@ -113,8 +114,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/bridgehub/main.js"
+        "src/polkadot/bridgehub/main.ts"
       ]
     },
     "process:bridgehub:westend": {
@@ -164,8 +166,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/assethub/main.js"
+        "src/polkadot/assethub/main.ts"
       ]
     },
     "process:assethub:westend": {
@@ -181,7 +184,12 @@
     "postprocess": {
       "description": "Aggregate data from multiple tables",
       "deps": ["build"],
-      "cmd": ["node", "--require=dotenv/config", "lib/postprocess/cron.js"]
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/postprocess/cron.ts"
+      ]
     },
     "oneshot-postprocess": {
       "description": "Oneshot Aggregate",
@@ -209,8 +217,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/parachains/moonbeam/main.js"
+        "src/polkadot/parachains/moonbeam/main.ts"
       ]
     },
     "generateMeta:parachain:bifrost": {
@@ -234,8 +243,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/parachains/bifrost/main.js"
+        "src/polkadot/parachains/bifrost/main.ts"
       ]
     },
     "generateMeta:parachain:acala": {
@@ -259,8 +269,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/parachains/acala/main.js"
+        "src/polkadot/parachains/acala/main.ts"
       ]
     },
     "generateMeta:parachain:mythos": {
@@ -284,8 +295,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/parachains/mythos/main.js"
+        "src/polkadot/parachains/mythos/main.ts"
       ]
     },
     "generateMeta:parachain:hydration": {
@@ -309,8 +321,9 @@
       "deps": ["build"],
       "cmd": [
         "node",
+        "--require=ts-node/register",
         "--require=dotenv/config",
-        "lib/polkadot/parachains/hydration/main.js"
+        "src/polkadot/parachains/hydration/main.ts"
       ]
     },
     "serve": {
