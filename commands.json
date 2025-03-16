@@ -64,7 +64,7 @@
         "node",
         "--require=ts-node/register",
         "--require=dotenv/config",
-        "src/polkadot/ethereum/main.js"
+        "src/polkadot/ethereum/main.ts"
       ]
     },
     "process:ethereum:westend": {
