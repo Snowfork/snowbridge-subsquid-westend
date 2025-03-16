@@ -44,11 +44,11 @@ deploy:
         RPC_BIFROST: "wss://bifrost-polkadot-rpc.dwellir.com"
         START_BLOCK_BIFROST: 5701045
       cmd: ["sqd", "process:parachain:bifrost"]
-    # - name: mythos-processor
-    #   env:
-    #     RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
-    #     START_BLOCK_MYTHOS: 2542302
-    #   cmd: ["sqd", "process:parachain:mythos"]
+    - name: mythos-processor
+      env:
+        RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
+        START_BLOCK_MYTHOS: 2542302
+      cmd: ["sqd", "process:parachain:mythos"]
     - name: post-processor
       cmd: ["sqd", "postprocess"]
   api:
