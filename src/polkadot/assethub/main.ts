@@ -269,10 +269,12 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     }
   }
 
+  ctx.log.info(`processed messages ${processedMessages.length}`);
   if (processedMessages.length > 0) {
     ctx.log.debug("saving messageQueue processed messages");
     await ctx.store.save(processedMessages);
   }
+  ctx.log.info(`transfer messages ${transfersToPolkadot.length}`);
   if (transfersToPolkadot.length > 0) {
     ctx.log.debug("saving transfer messages from ethereum to polkadot");
     await ctx.store.save(transfersToPolkadot);

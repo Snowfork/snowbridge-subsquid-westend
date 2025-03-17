@@ -20,6 +20,7 @@ import {
   toSubscanEventID,
   MythosParaId,
 } from "../../../common";
+import { V5Instruction, V5Location } from "./types/v1013";
 
 processor.run(
   new TypeormDatabase({
@@ -45,7 +46,7 @@ const isDestinationToAssetHub = (destination: V4Location): boolean => {
 };
 
 const matchToEthereumAsset = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V5Instruction
 ): ToEthereumAsset | undefined => {
   let ethereumAsset;
   if (instruction.__kind == "WithdrawAsset" && instruction.value.length > 1) {
@@ -92,7 +93,7 @@ const matchToEthereumAsset = (
 };
 
 const matchReserveTransferENAToEthereum = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V5Instruction
 ): boolean => {
   if (
     instruction.__kind == "InitiateReserveWithdraw" &&
@@ -107,7 +108,7 @@ const matchReserveTransferENAToEthereum = (
 };
 
 const matchReserveTransferPNAToEthereum = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V5Instruction
 ): boolean => {
   if (
     instruction.__kind == "DepositReserveAsset" &&
@@ -121,7 +122,9 @@ const matchReserveTransferPNAToEthereum = (
   return false;
 };
 
-const matchEthereumBeneficiary = (instruction: V4Instruction): string => {
+const matchEthereumBeneficiary = (
+  instruction: V4Instruction | V5Instruction
+): string => {
   if (
     (instruction.__kind == "InitiateReserveWithdraw" ||
       instruction.__kind == "DepositReserveAsset") &&
@@ -141,13 +144,15 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     for (let event of block.events) {
       if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
-          origin: V4Location;
-          destination: V4Location;
+          origin: V4Location | V5Location;
+          destination: V4Location | V5Location;
           messageId: Bytes;
-          message: V4Instruction[];
+          message: (V4Instruction | V5Instruction)[];
         };
         if (events.polkadotXcm.sent.v1000.is(event)) {
           rec = events.polkadotXcm.sent.v1000.decode(event);
+        } else if (events.polkadotXcm.sent.v1013.is(event)) {
+          rec = events.polkadotXcm.sent.v1013.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }
