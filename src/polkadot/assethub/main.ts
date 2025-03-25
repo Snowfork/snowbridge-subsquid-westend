@@ -64,7 +64,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         // Filter message from non system parachain
         if (rec.origin.__kind == "Sibling" && rec.origin.value >= 2000) {
           messageForwarded = new MessageProcessedOnPolkadot({
-            id: event.id,
+            id: toSubscanEventID(event.id),
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: rec.id.toString().toLowerCase(),
@@ -233,7 +233,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           rec.origin.value == BridgeHubParaId
         ) {
           processedMessage = new MessageProcessedOnPolkadot({
-            id: event.id,
+            id: toSubscanEventID(event.id),
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: rec.id.toString().toLowerCase(),

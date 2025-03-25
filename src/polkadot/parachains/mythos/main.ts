@@ -284,7 +284,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           rec.origin.value == AssetHubParaId
         ) {
           let message = new MessageProcessedOnPolkadot({
-            id: event.id,
+            id: toSubscanEventID(event.id),
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: rec.id.toString().toLowerCase(),
