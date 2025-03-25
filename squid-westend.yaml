@@ -34,6 +34,6 @@ scale:
       storage: 10G
       profile: small
   processor:
-    profile: medium
+    profile: small
   api:
     profile: small
