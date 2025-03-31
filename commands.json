@@ -227,7 +227,7 @@
       "cmd": [
         "npx",
         "squid-substrate-metadata-explorer",
-        "--rpc=wss://bifrost-polkadot-rpc.dwellir.com",
+        "--rpc=wss://bifrost-polkadot.ibp.network",
         "--out=versions/polkadot/bifrost-versions.jsonl"
       ]
     },

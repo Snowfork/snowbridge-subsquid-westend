@@ -41,7 +41,7 @@ deploy:
       cmd: ["sqd", "process:parachain:acala"]
     - name: bifrost-processor
       env:
-        RPC_BIFROST: "wss://bifrost-polkadot-rpc.dwellir.com"
+        RPC_BIFROST: "wss://bifrost-polkadot.ibp.network"
         START_BLOCK_BIFROST: 5701045
       cmd: ["sqd", "process:parachain:bifrost"]
     - name: mythos-processor

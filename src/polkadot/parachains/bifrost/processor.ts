@@ -19,7 +19,7 @@ const START_BLOCK = process.env["START_BLOCK_BIFROST"]
   : 5701045;
 
 const RPC_URL =
-  process.env["RPC_BIFROST"] || "wss://bifrost-polkadot-rpc.dwellir.com";
+  process.env["RPC_BIFROST"] || "wss://bifrost-polkadot.ibp.network";
 
 export const processor = new SubstrateBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
