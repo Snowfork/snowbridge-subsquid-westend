@@ -158,7 +158,7 @@ sqd deploy --org snowbridge .
 
 ### How to use the API
 
-UI or 3rd teams can query transfers through Snowbridge from this indexer, explore https://data.snowbridge.network/graphql for the querys we support.
+UI or 3rd teams can query transfers through Snowbridge from this indexer, explore https://snowbridge.squids.live/snowbridge-subsquid-polkadot@v1/api/graphql for the querys we support.
 
 For easy usage we aggregate all data to two queries, which is `transferStatusToEthereums` for direction to ethereum and `transferStatusToPolkadots` for the other direction. A demo script for reference:
 

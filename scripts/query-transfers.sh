@@ -1,4 +1,4 @@
-export api_end_point="https://data.snowbridge.network/graphql"
+export api_end_point="https://snowbridge.squids.live/snowbridge-subsquid-polkadot@v1/api/graphql"
 
 echo "Query the recent 100 transfers from ethereum to polkadot:"
 curl -H 'Content-Type: application/json' \
