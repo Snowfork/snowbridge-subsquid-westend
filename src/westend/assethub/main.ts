@@ -32,6 +32,7 @@ import {
   BridgeHubParaId,
   AssetHubParaId,
   toSubscanEventID,
+  findTokenAddress,
 } from "../../common";
 
 processor.run(
@@ -50,8 +51,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     forwardMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
     let xcmpMessageSent = false;
-    let messageForwarded: MessageProcessedOnPolkadot;
-    let transferToEthereum: TransferStatusToEthereum;
+    let transfers: TransferStatusToEthereum[] = [];
+    let messagesInBlock: MessageProcessedOnPolkadot[] = [];
     for (let event of block.events) {
       if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
         xcmpMessageSent = true;
@@ -76,8 +77,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
         // Filter message from non system parachain
         if (rec.origin.__kind == "Sibling" && rec.origin.value >= 2000) {
-          messageForwarded = new MessageProcessedOnPolkadot({
-            id: event.id,
+          let messageForwarded = new MessageProcessedOnPolkadot({
+            id: toSubscanEventID(event.id),
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: rec.id.toString().toLowerCase(),
@@ -85,6 +86,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             success: rec.success,
             eventId: toSubscanEventID(event.id),
           });
+          messagesInBlock.push(messageForwarded);
+          forwardMessages.push(messageForwarded);
         }
       } else if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
@@ -160,6 +163,17 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
                   tokenAddress = val.key;
                 }
               }
+              // For native Ether
+              else if (
+                instruction0.__kind == "WithdrawAsset" &&
+                asset.id.interior.__kind == "Here"
+              ) {
+                tokenAddress = "0x0000000000000000000000000000000000000000";
+              }
+              // For PNA retrieving from the static map, can be improved by using another indexer
+              else {
+                tokenAddress = findTokenAddress("westend", tokenLocation);
+              }
             }
           }
 
@@ -174,7 +188,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             }
           }
 
-          transferToEthereum = new TransferStatusToEthereum({
+          let transferToEthereum = new TransferStatusToEthereum({
             id: messageId,
             txHash: event.extrinsic?.hash,
             blockNumber: block.header.height,
@@ -188,32 +202,37 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             amount,
             status: TransferStatusEnum.Pending,
           });
+          transfers.push(transferToEthereum);
         }
       }
     }
-    if (messageForwarded!) {
-      forwardMessages.push(messageForwarded);
-    }
     // Start from AH
-    if (transferToEthereum!) {
-      let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
-        id: transferToEthereum.messageId,
-      });
-      if (!transfer) {
-        transfersToEthereum.push(transferToEthereum);
+    if (transfers.length) {
+      for (let transfer of transfers) {
+        let transferStatus = await ctx.store.findOneBy(
+          TransferStatusToEthereum,
+          {
+            id: transfer.messageId,
+          }
+        );
+        if (!transferStatus) {
+          transfersToEthereum.push(transfer);
+        }
       }
     }
     // Start from 3rd Parachain
-    if (xcmpMessageSent && messageForwarded!) {
-      let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
-        id: messageForwarded.messageId,
-      });
-      if (transfer!) {
-        transfer.toAssetHubMessageQueue = messageForwarded;
-        if (!messageForwarded.success) {
-          transfer.status = TransferStatusEnum.Failed;
+    if (xcmpMessageSent) {
+      for (let messageForwarded of messagesInBlock) {
+        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+          id: messageForwarded.messageId,
+        });
+        if (transfer!) {
+          transfer.toAssetHubMessageQueue = messageForwarded;
+          if (!messageForwarded.success) {
+            transfer.status = TransferStatusEnum.Failed;
+          }
+          transfersToEthereum.push(transfer);
         }
-        transfersToEthereum.push(transfer);
       }
     }
   }
@@ -233,7 +252,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let transfersToPolkadot: TransferStatusToPolkadot[] = [],
     processedMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
-    let processedMessage: MessageProcessedOnPolkadot;
+    let processedMessagesInBlock: MessageProcessedOnPolkadot[] = [];
     for (let event of block.events) {
       if (
         event.name == events.messageQueue.processed.name ||
@@ -259,7 +278,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           rec.origin.__kind == "Sibling" &&
           rec.origin.value == BridgeHubParaId
         ) {
-          processedMessage = new MessageProcessedOnPolkadot({
+          let processedMessage = new MessageProcessedOnPolkadot({
             id: event.id,
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
@@ -268,30 +287,33 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             success: rec.success,
             eventId: toSubscanEventID(event.id),
           });
+          processedMessagesInBlock.push(processedMessage);
         }
       }
     }
 
-    if (processedMessage!) {
-      processedMessages.push(processedMessage);
-      let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
-        id: processedMessage.messageId,
-      });
-      if (transfer!) {
-        if (!processedMessage.success) {
-          transfer.status = TransferStatusEnum.Failed;
-        } else {
-          transfer.status = TransferStatusEnum.Complete;
-          if (transfer.destinationParaId == AssetHubParaId) {
-            // Terminated on AH
-            transfer.toAssetHubMessageQueue = processedMessage;
-            transfer.toDestination = processedMessage;
+    if (processedMessagesInBlock.length) {
+      for (let processedMessage of processedMessagesInBlock) {
+        processedMessages.push(processedMessage);
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+          id: processedMessage.messageId,
+        });
+        if (transfer!) {
+          if (!processedMessage.success) {
+            transfer.status = TransferStatusEnum.Failed;
           } else {
-            // Forward to 3rd Parachain
-            transfer.toAssetHubMessageQueue = processedMessage;
+            transfer.status = TransferStatusEnum.Complete;
+            if (transfer.destinationParaId == AssetHubParaId) {
+              // Terminated on AH
+              transfer.toAssetHubMessageQueue = processedMessage;
+              transfer.toDestination = processedMessage;
+            } else {
+              // Forward to 3rd Parachain
+              transfer.toAssetHubMessageQueue = processedMessage;
+            }
           }
+          transfersToPolkadot.push(transfer);
         }
-        transfersToPolkadot.push(transfer);
       }
     }
   }

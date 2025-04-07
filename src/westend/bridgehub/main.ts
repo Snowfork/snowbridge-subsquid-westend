@@ -45,7 +45,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           throw Object.assign(new Error("Unsupported spec"), event);
         }
         let message = new InboundMessageReceivedOnBridgeHub({
-          id: event.id,
+          id: toSubscanEventID(event.id),
           blockNumber: block.header.height,
           timestamp: new Date(block.header.timestamp!),
           messageId: rec.messageId.toString().toLowerCase(),
@@ -93,7 +93,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           throw Object.assign(new Error("Unsupported spec"), event);
         }
         let message = new OutboundMessageAcceptedOnBridgeHub({
-          id: event.id,
+          id: toSubscanEventID(event.id),
           blockNumber: block.header.height,
           timestamp: new Date(block.header.timestamp!),
           messageId: rec.id.toString().toLowerCase(),
@@ -142,7 +142,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           rec.origin.value == AssetHubParaId
         ) {
           let processedMessage = new MessageProcessedOnPolkadot({
-            id: event.id,
+            id: toSubscanEventID(event.id),
             blockNumber: block.header.height,
             timestamp: new Date(block.header.timestamp!),
             messageId: rec.id.toString().toLowerCase(),
