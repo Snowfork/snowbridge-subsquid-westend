@@ -54,16 +54,16 @@ const registedAssets: any = {
       '{"parents":1,"interior":{"__kind":"X1","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Kusama"}}]}}',
     // PINK
     "0xa37B046782518A80e2E69056009FBD0431d36E50":
-      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value": "23"}]}}',
+      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"23"}]}}',
     // KOL
     "0x21FaB0eA070F162180447881D5873Cf3d57200d6":
-      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value": "86"}]}}',
+      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"86"}]}}',
     // DED
     "0x92262680A8d6636bbA9bFFDf484c274cA2de6400":
-      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value": "30"}]}}',
+      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"30"}]}}',
     // WUD
     "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5":
-      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value": "31337"}]}}',
+      '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"31337"}]}}',
   },
   westend: {
     // WND
