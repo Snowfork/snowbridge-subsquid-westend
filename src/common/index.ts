@@ -64,6 +64,9 @@ const registedAssets: any = {
     // WUD
     "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5":
       '{"parents":1,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"31337"}]}}',
+    // TEER
+    "0x769916A66fDAC0E3D57363129caac59386ea622B":
+      '{"parents":1,"interior":{"__kind":"X2","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":2039}]}}',
   },
   westend: {
     // WND
