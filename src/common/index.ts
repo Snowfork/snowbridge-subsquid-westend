@@ -72,6 +72,9 @@ const registedAssets: any = {
     // WND
     "0xf50fb50d65c8c1f6c72e4d8397c984933afc8f7e":
       '{"parents":1,"interior":{"__kind":"X1","value":[{"__kind":"GlobalConsensus","value":{"__kind":"ByGenesis","value":"0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e"}}]}}',
+    // Frequency
+    "0x23838b1bb57cecf4422a57dd8e7f8a087b30d54f":
+      '{"parents":1,"interior":{"__kind":"X2","value":[{"__kind":"GlobalConsensus","value":{"__kind":"ByGenesis","value":"0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e"}},{"__kind":"Parachain","value":2313}]}}',
   },
 };
 
@@ -79,11 +82,15 @@ export const findTokenAddress = (network: string, tokenId: string): string => {
   let assets: any = registedAssets[network];
   if (assets) {
     for (const [key, value] of Object.entries(assets)) {
-      if (value == tokenId) {
+      if (normalizeString(value as string) == normalizeString(tokenId)) {
         return key;
       }
     }
     return "";
   }
   return "";
+};
+
+export const normalizeString = (str: string): string => {
+  return str.replace(/\s/g, "").toLowerCase();
 };
