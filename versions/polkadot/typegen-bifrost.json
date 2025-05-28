@@ -1,5 +1,5 @@
 {
-  "outDir": "../../src/parachains/bifrost/types",
+  "outDir": "../../src/polkadot/parachains/bifrost/types",
   "specVersions": "bifrost-versions.jsonl",
   "pallets": {
     "MessageQueue": {

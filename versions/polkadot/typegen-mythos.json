@@ -1,5 +1,5 @@
 {
-  "outDir": "../../src/parachains/mythos/types",
+  "outDir": "../../src/polkadot/parachains/mythos/types",
   "specVersions": "mythos-versions.jsonl",
   "pallets": {
     "MessageQueue": {

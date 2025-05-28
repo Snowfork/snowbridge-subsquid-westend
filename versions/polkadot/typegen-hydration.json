@@ -1,5 +1,5 @@
 {
-  "outDir": "../../src/parachains/hydration/types",
+  "outDir": "../../src/polkadot/parachains/hydration/types",
   "specVersions": "hydration-versions.jsonl",
   "pallets": {
     "MessageQueue": {

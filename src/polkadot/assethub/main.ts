@@ -14,6 +14,7 @@ import {
   ProcessMessageError,
 } from "./types/v1002000";
 import { ProcessMessageError as ProcessMessageErrorV1003000 } from "./types/v1003000";
+import { V5Location, V5Instruction } from "./types/v1005001";
 import {
   TransferStatusEnum,
   BridgeHubParaId,
@@ -78,13 +79,15 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
       } else if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
-          origin: V4Location;
-          destination: V4Location;
+          origin: V4Location | V5Location;
+          destination: V4Location | V5Location;
           messageId: Bytes;
-          message: V4Instruction[];
+          message: V4Instruction[] | V5Instruction[];
         };
         if (events.polkadotXcm.sent.v1002000.is(event)) {
           rec = events.polkadotXcm.sent.v1002000.decode(event);
+        } else if (events.polkadotXcm.sent.v1005001.is(event)) {
+          rec = events.polkadotXcm.sent.v1005001.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }

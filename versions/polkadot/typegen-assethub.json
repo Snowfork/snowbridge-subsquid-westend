@@ -1,5 +1,5 @@
 {
-  "outDir": "../../src/assethub/types",
+  "outDir": "../../src/polkadot/assethub/types",
   "specVersions": "assethub-versions.jsonl",
   "pallets": {
     "MessageQueue": {

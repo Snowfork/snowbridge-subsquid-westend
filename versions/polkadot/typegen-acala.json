@@ -1,5 +1,5 @@
 {
-  "outDir": "../../src/parachains/acala/types",
+  "outDir": "../../src/polkadot/parachains/acala/types",
   "specVersions": "acala-versions.jsonl",
   "pallets": {
     "MessageQueue": {
