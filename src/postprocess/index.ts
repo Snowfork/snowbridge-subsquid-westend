@@ -11,6 +11,8 @@ import {
 import {
   AssetHubParaId,
   forwardedTopicId,
+  KusamaNetwork,
+  PolkadotNetwork,
   TransferStatusEnum,
 } from "../common";
 
@@ -34,6 +36,7 @@ export const postProcess = async () => {
     await processToEthereumOnBridgeHubMessageQueue(connection);
     await processToEthereumOnBridgeHubOutboundQueue(connection);
     await processToEthereumOnDestination(connection);
+    await processToPolkadotFromKusama(connection);
   } finally {
     await connection.destroy().catch(() => null);
   }
@@ -270,5 +273,56 @@ const processToEthereumOnDestination = async (connection: DataSource) => {
   if (updated.length) {
     await connection.manager.save(updated);
     console.log("To ethereum transfer on destination updated");
+  }
+};
+
+const processToPolkadotFromKusama = async (connection: DataSource) => {
+  let updated: TransferStatusToPolkadot[] = [];
+  let toKusamaTransfers = await connection.manager.find(
+    TransferStatusToPolkadot,
+    {
+      where: {
+        status: 0,
+        sourceNetwork: PolkadotNetwork,
+        destinationNetwork: KusamaNetwork,
+      },
+    }
+  );
+  let toPolkadotTransfers = await connection.manager.find(
+    TransferStatusToPolkadot,
+    {
+      where: {
+        status: 0,
+        sourceNetwork: KusamaNetwork,
+        destinationNetwork: PolkadotNetwork,
+      },
+    }
+  );
+  let transfers = [...toKusamaTransfers, ...toPolkadotTransfers];
+  for (let transfer of transfers) {
+    let processedMessage = await connection.manager.findOneBy(
+      MessageProcessedOnPolkadot,
+      {
+        messageId: transfer.id,
+      }
+    );
+    if (processedMessage!) {
+      if (transfer.destinationParaId == AssetHubParaId) {
+        transfer.toAssetHubMessageQueue = processedMessage;
+        transfer.toDestination = processedMessage;
+      } else {
+        transfer.toAssetHubMessageQueue = processedMessage;
+      }
+      if (processedMessage.success) {
+        transfer.status = TransferStatusEnum.Complete;
+      } else {
+        transfer.status = TransferStatusEnum.Failed;
+      }
+      updated.push(transfer);
+    }
+  }
+  if (updated.length) {
+    await connection.manager.save(updated);
+    console.log("polkadot<>kusama transfers updated");
   }
 };

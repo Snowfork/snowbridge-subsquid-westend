@@ -326,6 +326,32 @@
         "src/polkadot/parachains/hydration/main.ts"
       ]
     },
+    "generateMeta:kusama:assethub": {
+      "description": "Generate metadata for Kusama AssetHub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://kusama-asset-hub-rpc.polkadot.io",
+        "--out=versions/kusama/assethub-versions.jsonl"
+      ]
+    },
+    "typegen:kusama:assethub": {
+      "description": "Generate data access classes from metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/kusama/typegen-assethub.json"
+      ]
+    },
+    "process:kusama:assethub": {
+      "description": "Start the squid processor for Kusama AssetHub",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/kusama/assethub/main.ts"
+      ]
+    },
     "serve": {
       "description": "Start the GraphQL API server",
       "cmd": ["squid-graphql-server"]

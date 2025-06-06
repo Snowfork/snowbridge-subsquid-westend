@@ -32,4 +32,7 @@ export class MessageProcessedOnPolkadot {
 
     @StringColumn_({nullable: true})
     eventId!: string | undefined | null
+
+    @StringColumn_({nullable: true})
+    network!: string | undefined | null
 }

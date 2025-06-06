@@ -19,8 +19,15 @@ import {
   TransferStatusEnum,
   BridgeHubParaId,
   AssetHubParaId,
+  KusamaAssetHubParaId,
   toSubscanEventID,
   findTokenAddress,
+  ksmTokenLocationString,
+  dotTokenLocationString,
+  KusamaNetwork,
+  PolkadotNetwork,
+  ksmTokenLocationFromPolkadotAH,
+  hereLocation,
 } from "../../common";
 
 processor.run(
@@ -36,10 +43,12 @@ processor.run(
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let transfersToEthereum: TransferStatusToEthereum[] = [],
-    forwardMessages: MessageProcessedOnPolkadot[] = [];
+    forwardMessages: MessageProcessedOnPolkadot[] = [],
+    transfersToKusama: TransferStatusToPolkadot[] = [];
   for (let block of ctx.blocks) {
     let xcmpMessageSent = false;
     let transfers: TransferStatusToEthereum[] = [];
+    let transfersKusama: TransferStatusToPolkadot[] = [];
     let messagesInBlock: MessageProcessedOnPolkadot[] = [];
     for (let event of block.events) {
       if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
@@ -73,6 +82,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             paraId: AssetHubParaId,
             success: rec.success,
             eventId: toSubscanEventID(event.id),
+            network: PolkadotNetwork,
           });
           messagesInBlock.push(messageForwarded);
           forwardMessages.push(messageForwarded);
@@ -173,6 +183,139 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             status: TransferStatusEnum.Pending,
           });
           transfers.push(transferToEthereum);
+        } else if (
+          rec.destination.parents == 2 &&
+          rec.destination.interior.__kind == "X2" &&
+          rec.destination.interior.value[0].__kind == "GlobalConsensus" &&
+          rec.destination.interior.value[0].value.__kind == "Kusama" &&
+          rec.destination.interior.value[1].__kind == "Parachain" &&
+          rec.destination.interior.value[1].value == KusamaAssetHubParaId &&
+          rec.message[0].__kind == "ReserveAssetDeposited"
+        ) {
+          // Destination Kusama AH
+          let amount: bigint = BigInt(0);
+          let senderAddress: Bytes = "";
+          let tokenAddress: Bytes = "";
+          let tokenLocation: Bytes = "";
+          let destinationAddress: Bytes = "";
+
+          let messageId = rec.messageId.toString().toLowerCase();
+          if (rec.origin.interior.__kind == "X1") {
+            let val = rec.origin.interior.value[0];
+            if (val.__kind == "AccountId32") {
+              senderAddress = val.id;
+            }
+          }
+
+          let instruction0 = rec.message[0];
+          let instruction2 = rec.message[2];
+          if (instruction2.__kind == "WithdrawAsset") {
+            let asset = instruction2.value[0];
+            if (asset.fun.__kind === "Fungible") {
+              amount = asset.fun.value;
+              const { parents, interior } = asset.id;
+
+              if (parents === 1 && interior.__kind == "Here") {
+                // KSM
+                tokenLocation = ksmTokenLocationFromPolkadotAH();
+                tokenAddress = findTokenAddress(
+                  PolkadotNetwork,
+                  ksmTokenLocationString()
+                );
+              }
+            }
+
+            if (rec.message[4].__kind == "DepositAsset") {
+              let beneficiary = rec.message[4].beneficiary;
+              if (beneficiary.interior.__kind == "X1") {
+                let val = beneficiary.interior.value[0];
+                if (val.__kind == "AccountId32") {
+                  destinationAddress = val.id;
+                }
+              }
+            }
+          } else if (instruction0.__kind == "ReserveAssetDeposited") {
+            // If there is only one asset, the asset transferred is DOT.
+            let asset = instruction0.value[0];
+            if (instruction0.value.length > 1) {
+              //If there is more than one asset, the asset being transferred is not DOT.
+              asset = instruction0.value[1];
+            }
+
+            tokenLocation = JSON.stringify(asset.id, (key, value) =>
+              typeof value === "bigint" ? value.toString() : value
+            );
+
+            if (asset.fun.__kind === "Fungible") {
+              amount = asset.fun.value;
+              const { parents, interior } = asset.id;
+              if (
+                parents === 2 &&
+                interior.__kind === "X1" &&
+                interior.value[0].__kind === "GlobalConsensus" &&
+                interior.value[0].value.__kind === "Ethereum"
+              ) {
+                // Ethereum native ETH
+                tokenAddress = "0x0000000000000000000000000000000000000000";
+              } else if (
+                parents === 2 &&
+                interior.__kind === "X2" &&
+                interior.value[0].__kind === "GlobalConsensus" &&
+                interior.value[0].value.__kind === "Ethereum"
+              ) {
+                // Ethereum ERC-20
+                const val = interior.value[1];
+                if (val.__kind === "AccountKey20") {
+                  tokenAddress = val.key;
+                } else {
+                  throw new Error("Unsupported Ethereum asset format.");
+                }
+              } else if (
+                parents === 2 &&
+                interior.__kind === "X1" &&
+                interior.value[0].__kind === "GlobalConsensus" &&
+                interior.value[0].value.__kind === "Polkadot"
+              ) {
+                // DOT
+                tokenLocation = hereLocation();
+                tokenAddress = findTokenAddress(
+                  PolkadotNetwork,
+                  dotTokenLocationString()
+                );
+              }
+            }
+
+            let instruction3 = rec.message[3];
+            if (instruction3.__kind == "DepositAsset") {
+              let beneficiary = instruction3.beneficiary;
+              if (beneficiary.interior.__kind == "X1") {
+                let val = beneficiary.interior.value[0];
+                if (val.__kind == "AccountId32") {
+                  destinationAddress = val.id;
+                }
+              }
+            }
+          }
+
+          let transferToKusama = new TransferStatusToPolkadot({
+            id: messageId,
+            txHash: event.extrinsic?.hash,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: messageId,
+            tokenAddress,
+            tokenLocation,
+            sourceNetwork: PolkadotNetwork,
+            sourceParaId: AssetHubParaId,
+            destinationNetwork: KusamaNetwork,
+            destinationParaId: KusamaAssetHubParaId,
+            senderAddress,
+            destinationAddress,
+            amount,
+            status: TransferStatusEnum.Pending,
+          });
+
+          transfersKusama.push(transferToKusama);
         }
       }
     }
@@ -205,6 +348,37 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         }
       }
     }
+
+    // Kusama
+    if (transfersKusama.length) {
+      for (let transferKusama of transfersKusama) {
+        let existingRecord = await ctx.store.findOneBy(
+          TransferStatusToPolkadot,
+          {
+            id: transferKusama.messageId,
+          }
+        );
+        let processedMessage = await ctx.store.findOneBy(
+          MessageProcessedOnPolkadot,
+          {
+            id: transferKusama.messageId,
+            network: KusamaNetwork,
+          }
+        );
+        if (processedMessage) {
+          if (!processedMessage.success) {
+            transferKusama.status = TransferStatusEnum.Failed;
+          } else {
+            transferKusama.status = TransferStatusEnum.Complete;
+          }
+        }
+        transferKusama.toAssetHubMessageQueue = processedMessage;
+        transferKusama.toDestination = processedMessage;
+        if (!existingRecord) {
+          transfersToKusama.push(transferKusama);
+        }
+      }
+    }
   }
 
   if (forwardMessages.length > 0) {
@@ -215,6 +389,11 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   if (transfersToEthereum.length > 0) {
     ctx.log.debug("saving transfer messages to ethereum");
     await ctx.store.save(transfersToEthereum);
+  }
+
+  if (transfersToKusama.length > 0) {
+    ctx.log.debug("saving transfer messages from polkadot to kusama");
+    await ctx.store.save(transfersToKusama);
   }
 }
 
@@ -234,6 +413,12 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           success?: boolean;
           error?: ProcessMessageError | ProcessMessageErrorV1003000;
         };
+
+        // Add debug for the specific event we're looking for
+        if (block.header.height === 8885130) {
+          console.log("FOUND BLOCK 8885130 EVENT:", event.name);
+          console.log("EVENT DATA:", JSON.stringify(event, null, 2));
+        }
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
         } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
@@ -256,6 +441,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             paraId: AssetHubParaId,
             success: rec.success,
             eventId: toSubscanEventID(event.id),
+            network: PolkadotNetwork,
           });
           processedMessagesInBlock.push(processedMessage);
         }
@@ -288,14 +474,13 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     }
   }
 
-  ctx.log.info(`processed messages ${processedMessages.length}`);
   if (processedMessages.length > 0) {
     ctx.log.debug("saving messageQueue processed messages");
     await ctx.store.save(processedMessages);
   }
   ctx.log.info(`transfer messages ${transfersToPolkadot.length}`);
   if (transfersToPolkadot.length > 0) {
-    ctx.log.debug("saving transfer messages from ethereum to polkadot");
+    ctx.log.debug("saving transfer messages from Kusama to Polkadot");
     await ctx.store.save(transfersToPolkadot);
   }
 }

@@ -11,6 +11,8 @@ export const BridgeHubParaId = 1002;
 
 export const AssetHubParaId = 1000;
 
+export const KusamaAssetHubParaId = 1000;
+
 export const MoonBeamParaId = 2004;
 
 export const HydrationParaId = 2034;
@@ -20,6 +22,10 @@ export const BifrostParaId = 2030;
 export const MythosParaId = 3369;
 
 export const AcalaParaId = 2000;
+
+export const KusamaNetwork = "kusama";
+
+export const PolkadotNetwork = "polkadot";
 
 export interface ToEthereumAsset {
   location: string;
@@ -86,7 +92,6 @@ export const findTokenAddress = (network: string, tokenId: string): string => {
         return key;
       }
     }
-    return "";
   }
   return "";
 };
@@ -94,3 +99,72 @@ export const findTokenAddress = (network: string, tokenId: string): string => {
 export const normalizeString = (str: string): string => {
   return str.replace(/\s/g, "").toLowerCase();
 };
+
+export const dotTokenLocationString = () => {
+  return stringifyLocation({
+    parents: 1,
+        interior: {
+    __kind: "X1",
+        value: [
+      {
+        __kind: "GlobalConsensus",
+        value: {
+          __kind: "Polkadot",
+        },
+      },
+    ],
+  },
+  });
+}
+
+
+export const ksmTokenLocationString = () => {
+  return stringifyLocation({
+    parents: 1,
+    interior: {
+      __kind: "X1",
+      value: [
+        {
+          __kind: "GlobalConsensus",
+          value: {
+            __kind: "Kusama",
+          },
+        },
+      ],
+    },
+  });
+}
+
+export const ksmTokenLocationFromPolkadotAH = () => {
+  return stringifyLocation({
+    parents: 2,
+    interior: {
+      __kind: "X1",
+      value: [
+        {
+          __kind: "GlobalConsensus",
+          value: {
+            __kind: "Kusama",
+          },
+        },
+      ],
+    },
+  });
+}
+
+export const hereLocation = () => {
+  return stringifyLocation({
+    parents: 1,
+    interior: {
+      __kind: "Here",
+    }
+  });
+}
+
+export const stringifyLocation = (location: any) => {
+  return JSON.stringify(
+      location,
+      (key, value) =>
+          typeof value === "bigint" ? value.toString() : value
+  );
+}

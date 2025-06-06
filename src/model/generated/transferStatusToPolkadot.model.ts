@@ -47,6 +47,15 @@ export class TransferStatusToPolkadot {
     @StringColumn_({nullable: true})
     senderAddress!: string | undefined | null
 
+    @StringColumn_({nullable: true})
+    sourceNetwork!: string | undefined | null
+
+    @IntColumn_({nullable: true})
+    sourceParaId!: number | undefined | null
+
+    @StringColumn_({nullable: true})
+    destinationNetwork!: string | undefined | null
+
     @IntColumn_({nullable: true})
     destinationParaId!: number | undefined | null
 

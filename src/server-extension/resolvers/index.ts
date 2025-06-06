@@ -85,6 +85,47 @@ export class SyncStatusResolver {
     let bridgehub_status: [ChainStatus] = await manager.query(query);
     query = `select 'ethereum' as name, height FROM eth_processor.status LIMIT 1`;
     let ethereum_status: [ChainStatus] = await manager.query(query);
-    return assethub_status.concat(bridgehub_status).concat(ethereum_status);
+    query = `select 'kusama_assethub' as name, height FROM kusama_assethub_processor.status LIMIT 1`;
+    let kusama_assethub_status: [ChainStatus] = await manager.query(query);
+    return assethub_status.concat(bridgehub_status).concat(ethereum_status).concat(kusama_assethub_status);
+  }
+}
+
+@Resolver()
+export class TransferToKusamaResolver {
+  constructor(private tx: () => Promise<EntityManager>) {}
+
+  @Query(() => ElapseResult)
+  async toKusamaElapse(): Promise<ElapseResult> {
+    const manager = await this.tx();
+
+    const query = `with to_kusama_elapse as
+    (
+        select transfer_status_to_kusama.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
+        from transfer_status_to_kusama join message_processed_on_polkadot 
+        on transfer_status_to_kusama.message_id = message_processed_on_polkadot.message_id
+    )
+    SELECT EXTRACT(EPOCH FROM (select avg(ts2 - ts1) from to_kusama_elapse)) as elapse
+    `;
+
+    const result: [ElapseResult] = await manager.query(query);
+    return result[0];
+  }
+
+  @Query(() => ElapseResult)
+  async fromKusamaElapse(): Promise<ElapseResult> {
+    const manager = await this.tx();
+
+    const query = `with from_kusama_elapse as
+    (
+        select transfer_status_from_kusama.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
+        from transfer_status_from_kusama join message_processed_on_polkadot 
+        on transfer_status_from_kusama.message_id = message_processed_on_polkadot.message_id
+    )
+    SELECT EXTRACT(EPOCH FROM (select avg(ts2 - ts1) from from_kusama_elapse)) as elapse
+    `;
+
+    const result: [ElapseResult] = await manager.query(query);
+    return result[0];
   }
 }

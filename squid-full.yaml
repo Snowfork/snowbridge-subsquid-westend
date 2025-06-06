@@ -49,6 +49,11 @@ deploy:
         RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
         START_BLOCK_MYTHOS: 2542302
       cmd: ["sqd", "process:parachain:mythos"]
+    - name: kusama-assethub-processor
+      env:
+        RPC_KUSAMA_ASSETHUB: "wss://asset-hub-kusama-rpc.dwellir.com"
+        START_BLOCK_KUSAMA_ASSETHUB: 9469109
+      cmd: [ "sqd", "process:kusama:assethub" ]
     - name: post-processor
       cmd: ["sqd", "postprocess"]
   api:

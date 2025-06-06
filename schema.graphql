@@ -36,6 +36,7 @@ type MessageProcessedOnPolkadot @entity {
   paraId: Int
   success: Boolean
   eventId: String
+  network: String
 }
 
 """
@@ -79,6 +80,9 @@ type TransferStatusToPolkadot @entity {
   tokenAddress: String
   tokenLocation: String
   senderAddress: String
+  sourceNetwork: String
+  sourceParaId: Int
+  destinationNetwork: String
   destinationParaId: Int
   destinationAddress: String
   amount: BigInt
