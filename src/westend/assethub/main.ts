@@ -125,7 +125,8 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           rec.destination.parents == 2 &&
           rec.destination.interior.__kind == "X1" &&
           rec.destination.interior.value[0].__kind == "GlobalConsensus" &&
-          rec.destination.interior.value[0].value.__kind == "Ethereum"
+          rec.destination.interior.value[0].value.__kind == "Ethereum" &&
+          rec.message.length
         ) {
           let amount: bigint = BigInt(0);
           let senderAddress: Bytes = "";

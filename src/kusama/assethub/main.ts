@@ -52,6 +52,7 @@ async function processKusamaEvents(ctx: ProcessorContext<Store>) {
           rec.destination.interior.value[0].value.__kind == "Polkadot" &&
           rec.destination.interior.value[1].__kind == "Parachain" &&
           rec.destination.interior.value[1].value == AssetHubParaId &&
+          rec.message.length &&
           rec.message[0].__kind == "ReserveAssetDeposited"
         ) {
           let amount: bigint = BigInt(0);
