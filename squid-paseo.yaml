@@ -1,0 +1,39 @@
+manifestVersion: subsquid.io/v0.1
+name: snowbridge-subsquid-paseo
+version: 1
+description: Snowbridge squid for Paseo
+build:
+deploy:
+  addons:
+    postgres:
+  migrate:
+    cmd: ["sqd", "migration:apply"]
+  processor:
+    - name: ethereum-processor
+      env:
+        RPC_ETH_HTTP: ${{ secrets.SEPOLIA_RPC_ETH_HTTP }}
+        START_BLOCK_ETH: 8569522
+      cmd: ["sqd", "process:ethereum:paseo"]
+    - name: bridgehub-processor
+      env:
+        RPC_BRIDGEHUB: "wss://sys.ibp.network/bridgehub-paseo"
+        START_BLOCK_BRIDGEHUB: 2128914
+      cmd: ["sqd", "process:bridgehub:paseo"]
+    - name: assethub-processor
+      env:
+        RPC_ASSETHUB: "wss://sys.ibp.network/asset-hub-paseo"
+        START_BLOCK_ASSETHUB: 2122067
+      cmd: ["sqd", "process:assethub:paseo"]
+    - name: post-processor
+      cmd: ["sqd", "postprocess"]
+  api:
+    cmd: ["sqd", "serve:prod"]
+scale:
+  addons:
+    postgres:
+      storage: 10G
+      profile: small
+  processor:
+    profile: small
+  api:
+    profile: small

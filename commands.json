@@ -57,6 +57,14 @@
         { "glob": "./abi/westend/*.json" }
       ]
     },
+    "typegen:ethereum:paseo": {
+      "description": "Generate data access classes for an ABI file(s)",
+      "cmd": [
+        "squid-evm-typegen",
+        "./src/paseo/ethereum/abi",
+        { "glob": "./abi/paseo/*.json" }
+      ]
+    },
     "process:ethereum": {
       "description": "start the squid processor for ethereum mainnet",
       "deps": ["build"],
@@ -77,6 +85,16 @@
         "src/westend/ethereum/main.ts"
       ]
     },
+    "process:ethereum:paseo": {
+      "description": "start the squid processor for Paseo Sepolia",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/paseo/ethereum/main.ts"
+      ]
+    },
     "generateMeta:bridgehub": {
       "description": "Generate metadata for bridge hub",
       "cmd": [
@@ -95,6 +113,15 @@
         "--out=versions/westend/bridgehub-versions.jsonl"
       ]
     },
+    "generateMeta:bridgehub:paseo": {
+      "description": "Generate metadata for bridge hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://sys.ibp.network/bridgehub-paseo",
+        "--out=versions/paseo/bridgehub-versions.jsonl"
+      ]
+    },
     "typegen:bridgehub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": [
@@ -107,6 +134,13 @@
       "cmd": [
         "squid-substrate-typegen",
         "./versions/westend/typegen-bridgehub.json"
+      ]
+    },
+    "typegen:bridgehub:paseo": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/paseo/typegen-bridgehub.json"
       ]
     },
     "process:bridgehub": {
@@ -129,6 +163,16 @@
         "src/westend/bridgehub/main.ts"
       ]
     },
+    "process:bridgehub:paseo": {
+      "description": "start the squid processor for Paseo BridgeHub",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/paseo/bridgehub/main.ts"
+      ]
+    },
     "generateMeta:assethub": {
       "description": "Generate metadata for asset hub",
       "cmd": [
@@ -147,6 +191,15 @@
         "--out=versions/westend/assethub-versions.jsonl"
       ]
     },
+    "generateMeta:assethub:paseo": {
+      "description": "Generate metadata for asset hub",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://sys.ibp.network/asset-hub-paseo",
+        "--out=versions/paseo/assethub-versions.jsonl"
+      ]
+    },
     "typegen:assethub": {
       "description": "Generate data access classes for an substrate metadata",
       "cmd": [
@@ -159,6 +212,13 @@
       "cmd": [
         "squid-substrate-typegen",
         "./versions/westend/typegen-assethub.json"
+      ]
+    },
+    "typegen:assethub:paseo": {
+      "description": "Generate data access classes for an substrate metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/paseo/typegen-assethub.json"
       ]
     },
     "process:assethub": {
@@ -179,6 +239,16 @@
         "--require=ts-node/register",
         "--require=dotenv/config",
         "src/westend/assethub/main.ts"
+      ]
+    },
+    "process:assethub:paseo": {
+      "description": "start the squid processor for Paseo AssetHub",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/paseo/assethub/main.ts"
       ]
     },
     "postprocess": {
