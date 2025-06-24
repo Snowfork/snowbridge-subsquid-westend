@@ -430,14 +430,18 @@
       "description": "Start the GraphQL API server with caching and limits",
       "cmd": [
         "squid-graphql-server",
+        "--max-root-fields",
+        "30",
+        "--max-response-size",
+        "5000",
         "--dumb-cache",
         "in-memory",
         "--dumb-cache-ttl",
-        "1000",
+        "2000",
         "--dumb-cache-size",
         "100",
         "--dumb-cache-max-age",
-        "1000"
+        "2000"
       ]
     },
     "check-updates": {
