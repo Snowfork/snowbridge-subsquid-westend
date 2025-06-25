@@ -23,6 +23,8 @@ export const MythosParaId = 3369;
 
 export const AcalaParaId = 2000;
 
+export const WestendFrequencyParaId = 2313;
+
 export const KusamaNetwork = "kusama";
 
 export const PolkadotNetwork = "polkadot";
@@ -84,8 +86,24 @@ const registedAssets: any = {
   },
 };
 
+const registedAssetsOnSourcechain: any = {
+  westend: {
+    // Frequency
+    "0x23838b1bb57cecf4422a57dd8e7f8a087b30d54f":
+      '{"parents":1,"interior":{"__kind":"X1","value":[{"__kind":"Parachain","value":2313}]}}',
+  },
+};
+
 export const findTokenAddress = (network: string, tokenId: string): string => {
   let assets: any = registedAssets[network];
+  if (assets) {
+    for (const [key, value] of Object.entries(assets)) {
+      if (normalizeString(value as string) == normalizeString(tokenId)) {
+        return key;
+      }
+    }
+  }
+  assets = registedAssetsOnSourcechain[network];
   if (assets) {
     for (const [key, value] of Object.entries(assets)) {
       if (normalizeString(value as string) == normalizeString(tokenId)) {
@@ -103,20 +121,19 @@ export const normalizeString = (str: string): string => {
 export const dotTokenLocationString = () => {
   return stringifyLocation({
     parents: 1,
-        interior: {
-    __kind: "X1",
-        value: [
-      {
-        __kind: "GlobalConsensus",
-        value: {
-          __kind: "Polkadot",
+    interior: {
+      __kind: "X1",
+      value: [
+        {
+          __kind: "GlobalConsensus",
+          value: {
+            __kind: "Polkadot",
+          },
         },
-      },
-    ],
-  },
+      ],
+    },
   });
-}
-
+};
 
 export const ksmTokenLocationString = () => {
   return stringifyLocation({
@@ -133,7 +150,7 @@ export const ksmTokenLocationString = () => {
       ],
     },
   });
-}
+};
 
 export const ksmTokenLocationFromPolkadotAH = () => {
   return stringifyLocation({
@@ -150,21 +167,19 @@ export const ksmTokenLocationFromPolkadotAH = () => {
       ],
     },
   });
-}
+};
 
 export const hereLocation = () => {
   return stringifyLocation({
     parents: 1,
     interior: {
       __kind: "Here",
-    }
+    },
   });
-}
+};
 
 export const stringifyLocation = (location: any) => {
-  return JSON.stringify(
-      location,
-      (key, value) =>
-          typeof value === "bigint" ? value.toString() : value
+  return JSON.stringify(location, (key, value) =>
+    typeof value === "bigint" ? value.toString() : value
   );
-}
+};

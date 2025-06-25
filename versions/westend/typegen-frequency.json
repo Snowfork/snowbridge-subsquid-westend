@@ -1,0 +1,35 @@
+{
+  "outDir": "../../src/westend/parachains/frequency/types",
+  "specVersions": "frequency-versions.jsonl",
+  "pallets": {
+    "MessageQueue": {
+      "events": ["Processed", "ProcessingFailed"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "ForeignAssets": {
+      "events": ["Created", "Issued", "Burned"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "PolkadotXcm": {
+      "events": ["Sent"],
+      "calls": [
+        "transfer_assets",
+        "reserve_transfer_assets",
+        "limited_reserve_transfer_assets",
+        "transfer_assets_using_type_and_then"
+      ],
+      "storage": [],
+      "constants": []
+    },
+    "XcmpQueue": {
+      "events": ["XcmpMessageSent"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    }
+  }
+}

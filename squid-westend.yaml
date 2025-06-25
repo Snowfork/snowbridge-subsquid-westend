@@ -24,6 +24,11 @@ deploy:
         RPC_ASSETHUB: "wss://asset-hub-westend-rpc.dwellir.com"
         START_BLOCK_ASSETHUB: 9102740
       cmd: ["sqd", "process:assethub:westend"]
+    - name: frequency-processor
+      env:
+        RPC_FREQUENCY: ${{ secrets.RPC_FREQUENCY }}
+        START_BLOCK_ASSETHUB: 333000
+      cmd: ["sqd", "process:westend:parachain:frequency"]
     - name: post-processor
       cmd: ["sqd", "postprocess"]
   api:

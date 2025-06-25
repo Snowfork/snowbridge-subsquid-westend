@@ -422,6 +422,33 @@
         "src/kusama/assethub/main.ts"
       ]
     },
+    "generateMeta:westend:parachain:frequency": {
+      "description": "Generate metadata for frequency",
+      "cmd": [
+        "npx",
+        "squid-substrate-metadata-explorer",
+        "--rpc=wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$FREQUENCY_API_KEY",
+        "--fromBlock=333300",
+        "--out=versions/westend/frequency-versions.jsonl"
+      ]
+    },
+    "typegen:westend:parachain:frequency": {
+      "description": "Generate data access classes from metadata",
+      "cmd": [
+        "squid-substrate-typegen",
+        "./versions/westend/typegen-frequency.json"
+      ]
+    },
+    "process:westend:parachain:frequency": {
+      "description": "Start the squid processor",
+      "deps": ["build"],
+      "cmd": [
+        "node",
+        "--require=ts-node/register",
+        "--require=dotenv/config",
+        "src/westend/parachains/frequency/main.ts"
+      ]
+    },
     "serve": {
       "description": "Start the GraphQL API server",
       "cmd": ["squid-graphql-server"]
