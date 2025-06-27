@@ -77,7 +77,12 @@ export class SyncStatusResolver {
   constructor(private tx: () => Promise<EntityManager>) {}
 
   @Query(() => [ChainStatus])
-  async latestBlocks(): Promise<ChainStatus[]> {
+  async latestBlocks(
+    @Arg("withPKBridge", {
+      defaultValue: true,
+    })
+    withPKBridge: boolean
+  ): Promise<ChainStatus[]> {
     const manager = await this.tx();
     let query = `select 'assethub' as name, height FROM assethub_processor.status LIMIT 1`;
     let assethub_status: [ChainStatus] = await manager.query(query);
@@ -85,9 +90,15 @@ export class SyncStatusResolver {
     let bridgehub_status: [ChainStatus] = await manager.query(query);
     query = `select 'ethereum' as name, height FROM eth_processor.status LIMIT 1`;
     let ethereum_status: [ChainStatus] = await manager.query(query);
-    query = `select 'kusama_assethub' as name, height FROM kusama_assethub_processor.status LIMIT 1`;
-    let kusama_assethub_status: [ChainStatus] = await manager.query(query);
-    return assethub_status.concat(bridgehub_status).concat(ethereum_status).concat(kusama_assethub_status);
+    let result = assethub_status
+      .concat(bridgehub_status)
+      .concat(ethereum_status);
+    if (withPKBridge) {
+      query = `select 'kusama_assethub' as name, height FROM kusama_assethub_processor.status LIMIT 1`;
+      let kusama_assethub_status: [ChainStatus] = await manager.query(query);
+      result = result.concat(kusama_assethub_status);
+    }
+    return result;
   }
 }
 
