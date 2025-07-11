@@ -25,6 +25,8 @@ deploy:
         START_BLOCK_ASSETHUB: 2122067
       cmd: ["sqd", "process:assethub:paseo"]
     - name: post-processor
+      env:
+        EXCLUDE_KUSAMA: "true"
       cmd: ["sqd", "postprocess"]
   api:
     cmd: ["sqd", "serve:prod"]

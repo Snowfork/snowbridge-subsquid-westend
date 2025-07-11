@@ -36,7 +36,9 @@ export const postProcess = async () => {
     await processToEthereumOnBridgeHubMessageQueue(connection);
     await processToEthereumOnBridgeHubOutboundQueue(connection);
     await processToEthereumOnDestination(connection);
-    await processToPolkadotFromKusama(connection);
+    if (process.env["EXCLUDE_KUSAMA"] != "true") {
+      await processToPolkadotFromKusama(connection);
+    }
   } finally {
     await connection.destroy().catch(() => null);
   }
