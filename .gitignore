@@ -9,6 +9,6 @@
 /.idea
 data
 db
-.env
-.cloud.env.*
 .vscode
+.envs
+.env

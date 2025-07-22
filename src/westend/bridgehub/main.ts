@@ -19,6 +19,10 @@ import {
   AggregateMessageOrigin as AggregateMessageOriginV1013000,
   ProcessMessageError as ProcessMessageErrorV1013000,
 } from "./types/v1013000";
+import {
+  AggregateMessageOrigin as AggregateMessageOriginV1019000,
+  ProcessMessageError as ProcessMessageErrorV1019000,
+} from "./types/v1019000";
 
 processor.run(
   new TypeormDatabase({
@@ -119,20 +123,30 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
       ) {
         let rec: {
           id: Bytes;
-          origin: AggregateMessageOrigin | AggregateMessageOriginV1013000;
+          origin:
+            | AggregateMessageOrigin
+            | AggregateMessageOriginV1013000
+            | AggregateMessageOriginV1019000;
           success?: boolean;
-          error?: ProcessMessageError | ProcessMessageErrorV1013000;
+          error?:
+            | ProcessMessageError
+            | ProcessMessageErrorV1013000
+            | ProcessMessageErrorV1019000;
         };
         if (events.messageQueue.processed.v1004000.is(event)) {
           rec = events.messageQueue.processed.v1004000.decode(event);
         } else if (events.messageQueue.processed.v1006000.is(event)) {
           rec = events.messageQueue.processed.v1006000.decode(event);
+        } else if (events.messageQueue.processed.v1019000.is(event)) {
+          rec = events.messageQueue.processed.v1019000.decode(event);
         } else if (events.messageQueue.processingFailed.v1004000.is(event)) {
           rec = events.messageQueue.processingFailed.v1004000.decode(event);
         } else if (events.messageQueue.processingFailed.v1006000.is(event)) {
           rec = events.messageQueue.processingFailed.v1006000.decode(event);
         } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
           rec = events.messageQueue.processingFailed.v1013000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1019000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1019000.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }

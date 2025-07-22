@@ -2,3 +2,5 @@
 /node_modules
 /lib
 /*Versions.jsonl
+.envs
+.env
