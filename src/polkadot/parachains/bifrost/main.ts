@@ -14,6 +14,12 @@ import {
   ProcessMessageError,
 } from "./types/v12001";
 import {
+  V4Instruction as V4InstructionV20000,
+  V4Location as V4LocationV20000,
+  V5Instruction,
+  V5Location,
+} from "./types/v20000";
+import {
   TransferStatusEnum,
   AssetHubParaId,
   ToEthereumAsset,
@@ -45,7 +51,7 @@ const isDestinationToAssetHub = (destination: V4Location): boolean => {
 };
 
 const matchToEthereumAsset = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V4InstructionV20000 | V5Instruction
 ): ToEthereumAsset | undefined => {
   let ethereumAsset;
   if (instruction.__kind == "WithdrawAsset" && instruction.value.length > 1) {
@@ -92,7 +98,7 @@ const matchToEthereumAsset = (
 };
 
 const matchReserveTransferENAToEthereum = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V4InstructionV20000 | V5Instruction
 ): boolean => {
   if (
     instruction.__kind == "InitiateReserveWithdraw" &&
@@ -107,7 +113,7 @@ const matchReserveTransferENAToEthereum = (
 };
 
 const matchReserveTransferPNAToEthereum = (
-  instruction: V4Instruction
+  instruction: V4Instruction | V4InstructionV20000 | V5Instruction
 ): boolean => {
   if (
     instruction.__kind == "DepositReserveAsset" &&
@@ -121,7 +127,9 @@ const matchReserveTransferPNAToEthereum = (
   return false;
 };
 
-const matchEthereumBeneficiary = (instruction: V4Instruction): string => {
+const matchEthereumBeneficiary = (
+  instruction: V4Instruction | V4InstructionV20000 | V5Instruction
+): string => {
   if (
     (instruction.__kind == "InitiateReserveWithdraw" ||
       instruction.__kind == "DepositReserveAsset") &&
@@ -141,13 +149,15 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     for (let event of block.events) {
       if (event.name == events.polkadotXcm.sent.name) {
         let rec: {
-          origin: V4Location;
-          destination: V4Location;
+          origin: V4Location | V4LocationV20000 | V5Location;
+          destination: V4Location | V4LocationV20000 | V5Location;
           messageId: Bytes;
-          message: V4Instruction[];
+          message: V4Instruction[] | V4InstructionV20000[] | V5Instruction[];
         };
         if (events.polkadotXcm.sent.v11000.is(event)) {
           rec = events.polkadotXcm.sent.v11000.decode(event);
+        } else if (events.polkadotXcm.sent.v20000.is(event)) {
+          rec = events.polkadotXcm.sent.v20000.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }

@@ -5,6 +5,7 @@ import * as v972 from '../v972'
 import * as v990 from '../v990'
 import * as v10000 from '../v10000'
 import * as v11000 from '../v11000'
+import * as v20000 from '../v20000'
 
 export const sent =  {
     name: 'PolkadotXcm.Sent',
@@ -68,6 +69,18 @@ export const sent =  {
             origin: v11000.V4Location,
             destination: v11000.V4Location,
             message: sts.array(() => v11000.V4Instruction),
+            messageId: sts.bytes(),
+        })
+    ),
+    /**
+     * A XCM message was sent.
+     */
+    v20000: new EventType(
+        'PolkadotXcm.Sent',
+        sts.struct({
+            origin: v20000.V5Location,
+            destination: v20000.V5Location,
+            message: sts.array(() => v20000.V5Instruction),
             messageId: sts.bytes(),
         })
     ),

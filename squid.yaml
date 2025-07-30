@@ -16,12 +16,12 @@ deploy:
       cmd: ["sqd", "process:ethereum"]
     - name: bridgehub-processor
       env:
-        RPC_BRIDGEHUB: "wss://bridge-hub-polkadot-rpc.dwellir.com"
+        RPC_BRIDGEHUB: "wss://bridge-hub-polkadot-rpc.n.dwellir.com"
         START_BLOCK_BRIDGEHUB: 2776300
       cmd: ["sqd", "process:bridgehub"]
     - name: assethub-processor
       env:
-        RPC_ASSETHUB: "wss://asset-hub-polkadot-rpc.dwellir.com"
+        RPC_ASSETHUB: "wss://sys.ibp.network/asset-hub-polkadot"
         START_BLOCK_ASSETHUB: 6457397
       cmd: ["sqd", "process:assethub"]
     - name: hydration-processor
@@ -51,7 +51,7 @@ deploy:
       cmd: ["sqd", "process:parachain:mythos"]
     - name: kusama-assethub-processor
       env:
-        RPC_KUSAMA_ASSETHUB: "wss://asset-hub-kusama-rpc.dwellir.com"
+        RPC_KUSAMA_ASSETHUB: "wss://asset-hub-kusama-rpc.n.dwellir.com"
         START_BLOCK_KUSAMA_ASSETHUB: 9469109
       cmd: ["sqd", "process:kusama:assethub"]
     - name: post-processor
