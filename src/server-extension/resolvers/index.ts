@@ -5,10 +5,18 @@ import type { EntityManager } from "typeorm";
 const AssetHubChannelId =
   "0xc173fac324158e77fb5840738a1a541f633cbec8884c6a601c567d2b376a0539";
 
+const latestTransfers = 20;
+
 @ObjectType()
 export class ElapseResult {
   @Field(() => Number, { nullable: false })
   elapse!: number;
+}
+
+@ObjectType()
+export class ElapseResultNullable {
+  @Field(() => Number, { nullable: true })
+  elapse: number | null = null;
 }
 
 @ObjectType()
@@ -29,7 +37,12 @@ export class TransferElapseResolver {
       nullable: true,
       defaultValue: AssetHubChannelId,
     })
-    channelId: string
+    channelId: string,
+    @Arg("lastest", {
+      nullable: true,
+      defaultValue: latestTransfers,
+    })
+    lastest: number
   ): Promise<ElapseResult> {
     const manager = await this.tx();
 
@@ -38,9 +51,9 @@ export class TransferElapseResolver {
         select transfer_status_to_polkadot.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
         from transfer_status_to_polkadot join message_processed_on_polkadot 
         on transfer_status_to_polkadot.message_id = message_processed_on_polkadot.message_id
-        where transfer_status_to_polkadot.channel_id = '${channelId}'
+        where transfer_status_to_polkadot.channel_id = '${channelId}' order by ts1 desc limit ${lastest}
     )
-    SELECT EXTRACT(EPOCH FROM (select avg(ts2 - ts1) from to_polkadot_elapse)) as elapse
+    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as to_polkadot_elapse FROM to_ethereum_elapse
     `;
 
     const result: [ElapseResult] = await manager.query(query);
@@ -53,7 +66,12 @@ export class TransferElapseResolver {
       nullable: true,
       defaultValue: AssetHubChannelId,
     })
-    channelId: string
+    channelId: string,
+    @Arg("lastest", {
+      nullable: true,
+      defaultValue: latestTransfers,
+    })
+    lastest: number
   ): Promise<ElapseResult> {
     const manager = await this.tx();
 
@@ -62,13 +80,29 @@ export class TransferElapseResolver {
         select transfer_status_to_ethereum.timestamp as ts1, inbound_message_dispatched_on_ethereum.timestamp as ts2 
         from transfer_status_to_ethereum join inbound_message_dispatched_on_ethereum 
         on transfer_status_to_ethereum.message_id = inbound_message_dispatched_on_ethereum.message_id
-        where transfer_status_to_ethereum.channel_id = '${channelId}' 
+        where transfer_status_to_ethereum.channel_id = '${channelId}' order by ts1 desc limit ${lastest}
     )
-    SELECT EXTRACT(EPOCH FROM (select avg(ts2 - ts1) from to_ethereum_elapse)) as elapse
+    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_elapse
     `;
 
     const result: [ElapseResult] = await manager.query(query);
     return result[0];
+  }
+
+  @Query(() => [ElapseResultNullable])
+  async toEthereumUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+    const manager = await this.tx();
+    const query = `select EXTRACT(EPOCH FROM (NOW() - timestamp)) as elapse from outbound_message_accepted_on_bridge_hub where nonce = (select (max(nonce) + 1) from inbound_message_dispatched_on_ethereum)`;
+    const result: ElapseResultNullable[] = await manager.query(query);
+    return result;
+  }
+
+  @Query(() => [ElapseResultNullable])
+  async toPolkadotUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+    const manager = await this.tx();
+    const query = `select EXTRACT(EPOCH FROM (NOW() - timestamp)) as elapse from outbound_message_accepted_on_ethereum where nonce = (select (max(nonce) + 1) from inbound_message_received_on_bridge_hub)`;
+    const result: ElapseResultNullable[] = await manager.query(query);
+    return result;
   }
 }
 
