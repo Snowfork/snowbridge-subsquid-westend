@@ -53,7 +53,7 @@ export class TransferElapseResolver {
         on transfer_status_to_polkadot.message_id = message_processed_on_polkadot.message_id
         where transfer_status_to_polkadot.channel_id = '${channelId}' order by ts1 desc limit ${lastest}
     )
-    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as to_polkadot_elapse FROM to_ethereum_elapse
+    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_elapse
     `;
 
     const result: [ElapseResult] = await manager.query(query);
