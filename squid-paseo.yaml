@@ -13,6 +13,7 @@ deploy:
       env:
         RPC_ETH_HTTP: ${{ secrets.SEPOLIA_RPC_ETH_HTTP }}
         START_BLOCK_ETH: 8569522
+        POLL_INTERVAL: 30000
       cmd: ["sqd", "process:ethereum:paseo"]
     - name: bridgehub-processor
       env:
