@@ -1,4 +1,3 @@
-import { assertNotNull } from "@subsquid/util-internal";
 import {
   BlockHeader,
   DataHandlerContext,
@@ -24,6 +23,8 @@ const START_BLOCK = process.env["START_BLOCK_ETH"]
 const RPC_URL =
   process.env["RPC_ETH_HTTP"] || "https://rpc.ankr.com/eth_sepolia";
 
+const POLL_INTERVAL = parseInt(process.env["POLL_INTERVAL"] || "30000");
+
 export const processor = new EvmBatchProcessor()
   // Lookup archive by the network name in Subsquid registry
   // See https://docs.subsquid.io/evm-indexing/supported-networks/
@@ -38,6 +39,7 @@ export const processor = new EvmBatchProcessor()
     // More RPC connection options at https://docs.subsquid.io/evm-indexing/configuration/initialization/#set-data-source
     rateLimit: 10,
   })
+  .setRpcDataIngestionSettings({ headPollInterval: POLL_INTERVAL })
   .setFinalityConfirmation(75)
   .setFields({
     log: {

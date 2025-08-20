@@ -11,7 +11,7 @@ deploy:
   processor:
     - name: ethereum-processor
       env:
-        RPC_ETH_HTTP: ${{ secrets.SEPOLIA_RPC_ETH_HTTP }}
+        RPC_ETH_HTTP: ${{ secrets.WND_SEPOLIA_RPC_ETH_HTTP }}
         START_BLOCK_ETH: 6675223
       cmd: ["sqd", "process:ethereum:westend"]
     - name: bridgehub-processor
