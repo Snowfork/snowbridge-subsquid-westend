@@ -15,7 +15,14 @@ import {
   toSubscanEventID,
 } from "../../common";
 import { AggregateMessageOrigin, ProcessMessageError } from "./types/v1002000";
-import { ProcessMessageError as ProcessMessageErrorV1003000 } from "./types/v1003000";
+import {
+  AggregateMessageOrigin as AggregateMessageOriginV1003000,
+  ProcessMessageError as ProcessMessageErrorV1003000,
+} from "./types/v1003000";
+import {
+  AggregateMessageOrigin as AggregateMessageOriginV1006001,
+  ProcessMessageError as ProcessMessageErrorV1006001,
+} from "./types/v1006001";
 
 processor.run(
   new TypeormDatabase({
@@ -116,16 +123,26 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
       ) {
         let rec: {
           id: Bytes;
-          origin: AggregateMessageOrigin;
+          origin:
+            | AggregateMessageOrigin
+            | AggregateMessageOriginV1003000
+            | AggregateMessageOriginV1006001;
           success?: boolean;
-          error?: ProcessMessageError | ProcessMessageErrorV1003000;
+          error?:
+            | ProcessMessageError
+            | ProcessMessageErrorV1003000
+            | ProcessMessageErrorV1006001;
         };
         if (events.messageQueue.processed.v1002000.is(event)) {
           rec = events.messageQueue.processed.v1002000.decode(event);
+        } else if (events.messageQueue.processed.v1006001.is(event)) {
+          rec = events.messageQueue.processed.v1006001.decode(event);
         } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
           rec = events.messageQueue.processingFailed.v1002000.decode(event);
         } else if (events.messageQueue.processingFailed.v1003000.is(event)) {
           rec = events.messageQueue.processingFailed.v1003000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1006001.is(event)) {
+          rec = events.messageQueue.processingFailed.v1006001.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }
