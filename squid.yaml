@@ -13,7 +13,7 @@ deploy:
       env:
         RPC_ETH_HTTP: ${{ secrets.RPC_ETH_HTTP }}
         START_BLOCK_ETH: 19715869
-        POLL_INTERVAL: 10000
+        POLL_INTERVAL: 20000
       cmd: ["sqd", "process:ethereum"]
     - name: bridgehub-processor
       env:
