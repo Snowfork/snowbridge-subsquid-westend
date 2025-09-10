@@ -8,7 +8,19 @@
       "storage": [],
       "constants": []
     },
+    "EthereumInboundQueueV2": {
+      "events": ["MessageReceived"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
     "EthereumOutboundQueue": {
+      "events": ["MessageAccepted"],
+      "calls": [],
+      "storage": [],
+      "constants": []
+    },
+    "EthereumOutboundQueueV2": {
       "events": ["MessageAccepted"],
       "calls": [],
       "storage": [],

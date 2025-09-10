@@ -39,4 +39,7 @@ export class InboundMessageDispatchedOnEthereum {
     @Index_()
     @BooleanColumn_({nullable: true})
     success!: boolean | undefined | null
+
+    @StringColumn_({nullable: true})
+    rewardAddress!: string | undefined | null
 }

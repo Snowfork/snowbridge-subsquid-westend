@@ -104,6 +104,70 @@ export class TransferElapseResolver {
     const result: ElapseResultNullable[] = await manager.query(query);
     return result;
   }
+
+  @Query(() => ElapseResult)
+  async toPolkadotV2Elapse(
+    @Arg("lastest", {
+      nullable: true,
+      defaultValue: latestTransfers,
+    })
+    lastest: number
+  ): Promise<ElapseResult> {
+    const manager = await this.tx();
+
+    const query = `with to_polkadot_v2_elapse as
+    (
+        select transfer_status_to_polkadot_v2.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
+        from transfer_status_to_polkadot_v2 join message_processed_on_polkadot 
+        on transfer_status_to_polkadot_v2.message_id = message_processed_on_polkadot.message_id
+        order by ts1 desc limit ${lastest}
+    )
+    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_v2_elapse
+    `;
+
+    const result: [ElapseResult] = await manager.query(query);
+    return result[0];
+  }
+
+  @Query(() => ElapseResult)
+  async toEthereumV2Elapse(
+    @Arg("lastest", {
+      nullable: true,
+      defaultValue: latestTransfers,
+    })
+    lastest: number
+  ): Promise<ElapseResult> {
+    const manager = await this.tx();
+
+    const query = `with to_ethereum_v2_elapse as
+    (
+        select transfer_status_to_ethereum_v2.timestamp as ts1, inbound_message_dispatched_on_ethereum.timestamp as ts2 
+        from transfer_status_to_ethereum_v2 join inbound_message_dispatched_on_ethereum 
+        on transfer_status_to_ethereum_v2.message_id = inbound_message_dispatched_on_ethereum.message_id
+        order by ts1 desc limit ${lastest}
+    )
+    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_v2_elapse
+    `;
+
+    const result: [ElapseResult] = await manager.query(query);
+    return result[0];
+  }
+
+  @Query(() => [ElapseResultNullable])
+  async toEthereumV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+    const manager = await this.tx();
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum_v2 where transfer_status_to_ethereum_v2.status = 0`;
+    const result: ElapseResultNullable[] = await manager.query(query);
+    return result;
+  }
+
+  @Query(() => [ElapseResultNullable])
+  async toPolkadotV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+    const manager = await this.tx();
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot_v2 where transfer_status_to_polkadot_v2.status = 0`;
+    const result: ElapseResultNullable[] = await manager.query(query);
+    return result;
+  }
 }
 
 @Resolver()

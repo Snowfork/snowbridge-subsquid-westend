@@ -1,3 +1,5 @@
 export * as messageQueue from './message-queue/events'
 export * as ethereumInboundQueue from './ethereum-inbound-queue/events'
 export * as ethereumOutboundQueue from './ethereum-outbound-queue/events'
+export * as ethereumInboundQueueV2 from './ethereum-inbound-queue-v2/events'
+export * as ethereumOutboundQueueV2 from './ethereum-outbound-queue-v2/events'

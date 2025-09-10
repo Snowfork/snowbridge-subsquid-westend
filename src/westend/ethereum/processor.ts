@@ -7,7 +7,7 @@ import {
   Transaction as _Transaction,
 } from "@subsquid/evm-processor";
 import { Store } from "@subsquid/typeorm-store";
-import * as gateway from "./abi/Gateway";
+import * as gateway from "./abi/GatewayV2";
 
 export const GATEWAY_ADDRESS =
   process.env["GATEWAY_ADDRESS"] ||
@@ -53,8 +53,18 @@ export const processor = new EvmBatchProcessor()
     address: [GATEWAY_ADDRESS],
     topic0: [
       gateway.events.TokenSent.topic,
-      gateway.events.OutboundMessageAccepted.topic,
-      gateway.events.InboundMessageDispatched.topic,
+      gateway.events[
+        "OutboundMessageAccepted(bytes32 indexed,uint64,bytes32 indexed,bytes)"
+      ].topic,
+      gateway.events[
+        "OutboundMessageAccepted(uint64,(address,(uint8,bytes)[],(uint8,bytes),bytes,uint128,uint128,uint128))"
+      ].topic,
+      gateway.events[
+        "InboundMessageDispatched(bytes32 indexed,uint64,bytes32 indexed,bool)"
+      ].topic,
+      gateway.events[
+        "InboundMessageDispatched(uint64 indexed,bytes32,bool,bytes32)"
+      ].topic,
     ],
   });
 

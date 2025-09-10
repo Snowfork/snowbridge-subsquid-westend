@@ -4,6 +4,8 @@ import {
   MessageProcessedOnPolkadot,
   TransferStatusToPolkadot,
   TransferStatusToEthereum,
+  TransferStatusToPolkadotV2,
+  TransferStatusToEthereumV2,
 } from "../../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
@@ -43,6 +45,8 @@ processor.run(
   async (ctx) => {
     await processInboundEvents(ctx);
     await processOutboundEvents(ctx);
+    await processInboundV2Events(ctx);
+    await processOutboundV2Events(ctx);
   }
 );
 
@@ -326,5 +330,248 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
   if (transfersToPolkadot.length > 0) {
     ctx.log.debug("saving transfer messages from ethereum to polkadot");
     await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processInboundV2Events(ctx: ProcessorContext<Store>) {
+  let transfersToPolkadot: TransferStatusToPolkadotV2[] = [],
+    processedMessages: MessageProcessedOnPolkadot[] = [];
+  for (let block of ctx.blocks) {
+    let processedMessagesInBlock: MessageProcessedOnPolkadot[] = [];
+    for (let event of block.events) {
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
+        let rec: {
+          id: Bytes;
+          origin: AggregateMessageOrigin | AggregateMessageOriginV1013000;
+          success?: boolean;
+          error?: ProcessMessageError | ProcessMessageErrorV1013000;
+        };
+        if (events.messageQueue.processed.v1004000.is(event)) {
+          rec = events.messageQueue.processed.v1004000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1004000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1004000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1013000.decode(event);
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        // Filter message from BH
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == BridgeHubParaId
+        ) {
+          let processedMessage = new MessageProcessedOnPolkadot({
+            id: toSubscanEventID(event.id),
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            paraId: AssetHubParaId,
+            success: rec.success,
+            eventId: toSubscanEventID(event.id),
+          });
+          processedMessagesInBlock.push(processedMessage);
+        }
+      }
+    }
+
+    if (processedMessagesInBlock.length) {
+      for (let processedMessage of processedMessagesInBlock) {
+        processedMessages.push(processedMessage);
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
+          messageId: processedMessage.messageId,
+        });
+        if (transfer!) {
+          if (!processedMessage.success) {
+            transfer.status = TransferStatusEnum.Failed;
+          } else {
+            transfer.status = TransferStatusEnum.Complete;
+            if (transfer.destinationParaId == AssetHubParaId) {
+              // Terminated on AH
+              transfer.toAssetHubMessageQueue = processedMessage;
+              transfer.toDestination = processedMessage;
+            } else {
+              // Forward to 3rd Parachain
+              transfer.toAssetHubMessageQueue = processedMessage;
+            }
+          }
+          transfersToPolkadot.push(transfer);
+        }
+      }
+    }
+  }
+
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
+  }
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("saving transfer messages from ethereum to polkadot");
+    await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
+  let transfersToEthereum: TransferStatusToEthereumV2[] = [],
+    forwardMessages: MessageProcessedOnPolkadot[] = [];
+  for (let block of ctx.blocks) {
+    let transfers: TransferStatusToEthereumV2[] = [];
+    for (let event of block.events) {
+      if (event.name == events.polkadotXcm.sent.name) {
+        let rec: {
+          origin:
+            | V4Location
+            | V4LocationV1016005
+            | V5Location
+            | V5LocationV1016006
+            | V5LocationV1017003;
+          destination:
+            | V4Location
+            | V4LocationV1016005
+            | V5Location
+            | V5LocationV1016006
+            | V5LocationV1017003;
+          messageId: Bytes;
+          message:
+            | V4Instruction[]
+            | V5Instruction[]
+            | V5InstructionV1016006[]
+            | V5InstructionV1017003[];
+        };
+        if (events.polkadotXcm.sent.v1007000.is(event)) {
+          rec = events.polkadotXcm.sent.v1007000.decode(event);
+        } else if (events.polkadotXcm.sent.v1016005.is(event)) {
+          rec = events.polkadotXcm.sent.v1016005.decode(event);
+        } else if (events.polkadotXcm.sent.v1016006.is(event)) {
+          rec = events.polkadotXcm.sent.v1016006.decode(event);
+        } else if (events.polkadotXcm.sent.v1017003.is(event)) {
+          rec = events.polkadotXcm.sent.v1017003.decode(event);
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        if (
+          rec.destination.parents == 2 &&
+          rec.destination.interior.__kind == "X1" &&
+          rec.destination.interior.value[0].__kind == "GlobalConsensus" &&
+          rec.destination.interior.value[0].value.__kind == "Ethereum" &&
+          block.calls.length > 0
+        ) {
+          let instructions = block.calls[0].args.message.value;
+
+          let amount: bigint = BigInt(0);
+          let senderAddress: Bytes = "";
+          let tokenAddress: Bytes = "";
+          let tokenLocation: Bytes = "";
+          let destinationAddress: Bytes = "";
+
+          let messageId = rec.messageId.toString().toLowerCase();
+          if (rec.origin.interior.__kind == "X1") {
+            let val = rec.origin.interior.value[0];
+            if (val.__kind == "AccountId32") {
+              senderAddress = val.id;
+            }
+          }
+
+          // Extract InitiateTransfer instruction from the third or fourth instruction of the XCM (the extra one being ExchangeAsset)
+          let transferInstruction = instructions[3];
+          if (transferInstruction.__kind != "InitiateTransfer") {
+            transferInstruction = instructions[4];
+          }
+          if (transferInstruction.__kind != "InitiateTransfer") {
+            throw new Error("Invalid transfer without InitiateTransfer");
+          }
+          let asset = transferInstruction.assets[0];
+          // WithdrawAsset for ENA and ReserveAssetDeposited for PNA
+          if (
+            asset.__kind == "ReserveWithdraw" ||
+            asset.__kind == "ReserveDeposit"
+          ) {
+            let transferedAsset = asset.value.value[0];
+            tokenLocation = JSON.stringify(transferedAsset.id, (key, value) =>
+              typeof value === "bigint" ? value.toString() : value
+            );
+            if (transferedAsset.fun.__kind == "Fungible") {
+              amount = transferedAsset.fun.value;
+              // For ENA extract the token address
+              if (
+                asset.__kind == "ReserveWithdraw" &&
+                transferedAsset.id.interior.__kind == "X2"
+              ) {
+                let val = transferedAsset.id.interior.value[1];
+                if (val.__kind == "AccountKey20") {
+                  tokenAddress = val.key;
+                }
+              }
+              // For native Ether
+              else if (
+                asset.__kind == "ReserveWithdraw" &&
+                transferedAsset.id.interior.__kind == "Here"
+              ) {
+                tokenAddress = "0x0000000000000000000000000000000000000000";
+              }
+              // For PNA retrieving from the static map, can be improved by using another indexer
+              else if (asset.__kind == "ReserveDeposit") {
+                tokenAddress = findTokenAddress("westend", tokenLocation);
+              } else {
+                throw new Error("Invalid token without token address");
+              }
+            }
+          }
+
+          let remoteInstruction = transferInstruction.remoteXcm[0];
+          if (remoteInstruction.__kind == "DepositAsset") {
+            let beneficiary = remoteInstruction.beneficiary;
+            if (beneficiary.interior.__kind == "X1") {
+              let val = beneficiary.interior.value[0];
+              if (val.__kind == "AccountKey20") {
+                destinationAddress = val.key;
+              }
+            }
+          }
+
+          let transferToEthereum = new TransferStatusToEthereumV2({
+            id: messageId,
+            txHash: event.extrinsic?.hash,
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: messageId,
+            tokenAddress,
+            tokenLocation,
+            sourceParaId: AssetHubParaId,
+            senderAddress,
+            destinationAddress,
+            amount,
+            status: TransferStatusEnum.Pending,
+          });
+          transfers.push(transferToEthereum);
+        }
+      }
+    }
+    // Start from AH
+    if (transfers.length) {
+      for (let transfer of transfers) {
+        let transferStatus = await ctx.store.findOneBy(
+          TransferStatusToEthereumV2,
+          {
+            id: transfer.messageId,
+          }
+        );
+        if (!transferStatus) {
+          transfersToEthereum.push(transfer);
+        }
+      }
+    }
+  }
+
+  if (forwardMessages.length > 0) {
+    ctx.log.debug("saving forward messages to ethereum");
+    await ctx.store.save(forwardMessages);
+  }
+
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages to ethereum");
+    await ctx.store.save(transfersToEthereum);
   }
 }

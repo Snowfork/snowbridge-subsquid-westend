@@ -64,6 +64,7 @@ type InboundMessageDispatchedOnEthereum @entity {
   channelId: String @index
   nonce: Int! @index
   success: Boolean @index
+  rewardAddress: String
 }
 
 """
@@ -114,4 +115,55 @@ type TransferStatusToEthereum @entity {
   toBridgeHubMessageQueue: MessageProcessedOnPolkadot
   toBridgeHubOutboundQueue: OutboundMessageAcceptedOnBridgeHub
   toDestination: InboundMessageDispatchedOnEthereum
+}
+
+"""
+V2 transfers from Ethereum to Polkadot
+"""
+type TransferStatusToPolkadotV2 @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  nonce: Int @index
+  status: Int @index
+  tokenAddress: String
+  tokenID: String
+  tokenLocation: String
+  senderAddress: String
+  sourceNetwork: String
+  sourceParaId: Int
+  destinationNetwork: String
+  destinationParaId: Int
+  destinationAddress: String
+  amount: BigInt
+  toBridgeHubInboundQueue: InboundMessageReceivedOnBridgeHub
+  toAssetHubMessageQueue: MessageProcessedOnPolkadot
+  toDestination: MessageProcessedOnPolkadot
+  claimer: String
+}
+
+"""
+V2 transfers from Polkadot to Ethereum
+"""
+type TransferStatusToEthereumV2 @entity {
+  id: ID!
+  messageId: String! @index
+  txHash: String! @index
+  blockNumber: Int! @index
+  timestamp: DateTime! @index
+  nonce: Int @index
+  status: Int @index
+  tokenAddress: String
+  tokenLocation: String
+  senderAddress: String
+  sourceParaId: Int
+  destinationAddress: String
+  amount: BigInt
+  toAssetHubMessageQueue: MessageProcessedOnPolkadot
+  toBridgeHubMessageQueue: MessageProcessedOnPolkadot
+  toBridgeHubOutboundQueue: OutboundMessageAcceptedOnBridgeHub
+  toDestination: InboundMessageDispatchedOnEthereum
+  claimer: String
 }

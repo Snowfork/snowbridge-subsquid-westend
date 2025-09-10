@@ -91,10 +91,36 @@ const registedAssetsOnSourcechain: any = {
     // Frequency
     "0x23838b1bb57cecf4422a57dd8e7f8a087b30d54f":
       '{"parents":1,"interior":{"__kind":"X1","value":[{"__kind":"Parachain","value":2313}]}}',
+    // WND
+    "0xf50fb50d65c8c1f6c72e4d8397c984933afc8f7e":
+      '{"parents":1,"interior":{"__kind":"Here"}}',
   },
 };
 
 export const findTokenAddress = (network: string, tokenId: string): string => {
+  let assets: any = registedAssets[network];
+  if (assets) {
+    for (const [key, value] of Object.entries(assets)) {
+      if (normalizeString(value as string) == normalizeString(tokenId)) {
+        return key;
+      }
+    }
+  }
+  assets = registedAssetsOnSourcechain[network];
+  if (assets) {
+    for (const [key, value] of Object.entries(assets)) {
+      if (normalizeString(value as string) == normalizeString(tokenId)) {
+        return key;
+      }
+    }
+  }
+  return "";
+};
+
+export const findTokenAddressFromAH = (
+  network: string,
+  tokenId: string
+): string => {
   let assets: any = registedAssets[network];
   if (assets) {
     for (const [key, value] of Object.entries(assets)) {
@@ -183,3 +209,33 @@ export const stringifyLocation = (location: any) => {
     typeof value === "bigint" ? value.toString() : value
   );
 };
+
+export function transformBigInt(obj: any): any {
+  // Regex to match strings like "bigint:123"
+  const bigintPattern = /^bigint:(\d+)$/;
+
+  // Handle null or non-object/non-array values
+  if (obj === null || typeof obj !== "object") {
+    if (typeof obj === "string") {
+      const match = obj.match(bigintPattern);
+      if (match) {
+        return Object.freeze(BigInt(match[1]));
+      }
+    }
+    return Object.freeze(obj);
+  }
+
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return Object.freeze(obj.map((item) => transformBigInt(item)));
+  }
+
+  // Handle objects
+  const result: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = transformBigInt(obj[key]);
+    }
+  }
+  return Object.freeze(result);
+}

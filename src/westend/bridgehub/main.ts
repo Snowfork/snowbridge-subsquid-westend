@@ -6,6 +6,8 @@ import {
   OutboundMessageAcceptedOnBridgeHub,
   TransferStatusToEthereum,
   TransferStatusToPolkadot,
+  TransferStatusToEthereumV2,
+  TransferStatusToPolkadotV2,
 } from "../../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
@@ -32,6 +34,8 @@ processor.run(
   async (ctx) => {
     await processInboundEvents(ctx);
     await processOutboundEvents(ctx);
+    await processInboundV2Events(ctx);
+    await processOutboundV2Events(ctx);
   }
 );
 
@@ -112,6 +116,157 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         });
         if (transfer!) {
           transfer.channelId = rec.channelId;
+          transfer.nonce = Number(rec.nonce);
+          transfer.toBridgeHubOutboundQueue = message;
+          transfersToEthereum.push(transfer);
+        }
+      }
+      if (
+        event.name == events.messageQueue.processed.name ||
+        event.name == events.messageQueue.processingFailed.name
+      ) {
+        let rec: {
+          id: Bytes;
+          origin:
+            | AggregateMessageOrigin
+            | AggregateMessageOriginV1013000
+            | AggregateMessageOriginV1019000;
+          success?: boolean;
+          error?:
+            | ProcessMessageError
+            | ProcessMessageErrorV1013000
+            | ProcessMessageErrorV1019000;
+        };
+        if (events.messageQueue.processed.v1004000.is(event)) {
+          rec = events.messageQueue.processed.v1004000.decode(event);
+        } else if (events.messageQueue.processed.v1006000.is(event)) {
+          rec = events.messageQueue.processed.v1006000.decode(event);
+        } else if (events.messageQueue.processed.v1019000.is(event)) {
+          rec = events.messageQueue.processed.v1019000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1004000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1004000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1006000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1006000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1013000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1013000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1019000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1019000.decode(event);
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        // Filter message from AH
+        if (
+          rec.origin.__kind == "Sibling" &&
+          rec.origin.value == AssetHubParaId
+        ) {
+          let processedMessage = new MessageProcessedOnPolkadot({
+            id: toSubscanEventID(event.id),
+            blockNumber: block.header.height,
+            timestamp: new Date(block.header.timestamp!),
+            messageId: rec.id.toString().toLowerCase(),
+            paraId: BridgeHubParaId,
+            success: rec.success,
+            eventId: toSubscanEventID(event.id),
+          });
+          processedMessages.push(processedMessage);
+        }
+      }
+    }
+  }
+
+  if (outboundMessages.length > 0) {
+    ctx.log.debug("saving outbound messages");
+    await ctx.store.save(outboundMessages);
+  }
+
+  if (processedMessages.length > 0) {
+    ctx.log.debug("saving messageQueue processed messages");
+    await ctx.store.save(processedMessages);
+  }
+
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("updating transfer messages");
+    await ctx.store.save(transfersToEthereum);
+  }
+}
+
+async function processInboundV2Events(ctx: ProcessorContext<Store>) {
+  let inboundMessages: InboundMessageReceivedOnBridgeHub[] = [],
+    transfersToPolkadot: TransferStatusToPolkadotV2[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (event.name == events.ethereumInboundQueueV2.messageReceived.name) {
+        let rec: { messageId: Bytes; nonce: bigint };
+        if (events.ethereumInboundQueueV2.messageReceived.v1019000.is(event)) {
+          rec =
+            events.ethereumInboundQueueV2.messageReceived.v1019000.decode(
+              event
+            );
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        let message = new InboundMessageReceivedOnBridgeHub({
+          id: toSubscanEventID(event.id),
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: rec.messageId.toString().toLowerCase(),
+          nonce: Number(rec.nonce),
+          eventId: toSubscanEventID(event.id),
+          txHash: event.extrinsic?.hash,
+        });
+        inboundMessages.push(message);
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
+          nonce: message.nonce,
+        });
+        if (transfer!) {
+          transfer.messageId = message.messageId;
+          transfer.toBridgeHubInboundQueue = message;
+          transfersToPolkadot.push(transfer);
+        }
+      }
+    }
+  }
+  if (inboundMessages.length > 0) {
+    ctx.log.debug("saving inbound messages");
+    await ctx.store.save(inboundMessages);
+  }
+
+  if (transfersToPolkadot.length > 0) {
+    ctx.log.debug("updating transfer messages");
+    await ctx.store.save(transfersToPolkadot);
+  }
+}
+
+async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
+  let outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
+    processedMessages: MessageProcessedOnPolkadot[] = [],
+    transfersToEthereum: TransferStatusToEthereumV2[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (event.name == events.ethereumOutboundQueueV2.messageAccepted.name) {
+        let rec: { id: Bytes; nonce: bigint };
+        if (events.ethereumOutboundQueueV2.messageAccepted.v1019000.is(event)) {
+          rec =
+            events.ethereumOutboundQueueV2.messageAccepted.v1019000.decode(
+              event
+            );
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        let message = new OutboundMessageAcceptedOnBridgeHub({
+          id: toSubscanEventID(event.id),
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: rec.id.toString().toLowerCase(),
+          nonce: Number(rec.nonce),
+          eventId: toSubscanEventID(event.id),
+        });
+        outboundMessages.push(message);
+
+        let transfer = await ctx.store.findOneBy(TransferStatusToEthereumV2, {
+          id: message.messageId,
+        });
+        if (transfer!) {
           transfer.nonce = Number(rec.nonce);
           transfer.toBridgeHubOutboundQueue = message;
           transfersToEthereum.push(transfer);

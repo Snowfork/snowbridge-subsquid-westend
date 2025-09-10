@@ -47,6 +47,10 @@ export const processor = new SubstrateBatchProcessor()
     ],
     extrinsic: true,
   })
+  .addCall({
+    name: ["PolkadotXcm.execute"],
+    extrinsic: true,
+  })
   .setFields({
     event: {
       args: true,
@@ -54,6 +58,7 @@ export const processor = new SubstrateBatchProcessor()
     extrinsic: {
       hash: true,
       fee: true,
+      success: true,
     },
     block: {
       timestamp: true,
