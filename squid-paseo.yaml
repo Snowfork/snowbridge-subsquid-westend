@@ -25,6 +25,11 @@ deploy:
         RPC_ASSETHUB: "wss://sys.ibp.network/asset-hub-paseo"
         START_BLOCK_ASSETHUB: 2122067
       cmd: ["sqd", "process:assethub:paseo"]
+    - name: neuroweb-processor
+      env:
+        RPC_NEUROWEB: "wss://parachain-testnet-rpc.origin-trail.network/"
+        START_BLOCK_NEUROWEB: 8953948
+      cmd: ["sqd", "process:paseo:parachain:neuroweb"]
     - name: post-processor
       env:
         EXCLUDE_KUSAMA: "true"

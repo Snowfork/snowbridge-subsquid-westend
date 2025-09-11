@@ -25,6 +25,8 @@ export const AcalaParaId = 2000;
 
 export const WestendFrequencyParaId = 2313;
 
+export const PaseoNeurowebParaId = 2043;
+
 export const KusamaNetwork = "kusama";
 
 export const PolkadotNetwork = "polkadot";
