@@ -51,12 +51,15 @@ export class TransferElapseResolver {
         select transfer_status_to_polkadot.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
         from transfer_status_to_polkadot join message_processed_on_polkadot 
         on transfer_status_to_polkadot.message_id = message_processed_on_polkadot.message_id
-        where transfer_status_to_polkadot.channel_id = '${channelId}' order by ts1 desc limit ${lastest}
+        where transfer_status_to_polkadot.channel_id = $1 order by ts1 desc limit $2
     )
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query);
+    const result: [ElapseResult] = await manager.query(query, [
+      channelId,
+      lastest,
+    ]);
     return result[0];
   }
 
@@ -80,12 +83,15 @@ export class TransferElapseResolver {
         select transfer_status_to_ethereum.timestamp as ts1, inbound_message_dispatched_on_ethereum.timestamp as ts2 
         from transfer_status_to_ethereum join inbound_message_dispatched_on_ethereum 
         on transfer_status_to_ethereum.message_id = inbound_message_dispatched_on_ethereum.message_id
-        where transfer_status_to_ethereum.channel_id = '${channelId}' order by ts1 desc limit ${lastest}
+        where transfer_status_to_ethereum.channel_id = $1 order by ts1 desc limit $2
     )
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query);
+    const result: [ElapseResult] = await manager.query(query, [
+      channelId,
+      lastest,
+    ]);
     return result[0];
   }
 
@@ -120,12 +126,12 @@ export class TransferElapseResolver {
         select transfer_status_to_polkadot_v2.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
         from transfer_status_to_polkadot_v2 join message_processed_on_polkadot 
         on transfer_status_to_polkadot_v2.message_id = message_processed_on_polkadot.message_id
-        order by ts1 desc limit ${lastest}
+        order by ts1 desc limit $1
     )
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_v2_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query);
+    const result: [ElapseResult] = await manager.query(query, [lastest]);
     return result[0];
   }
 
@@ -144,12 +150,12 @@ export class TransferElapseResolver {
         select transfer_status_to_ethereum_v2.timestamp as ts1, inbound_message_dispatched_on_ethereum.timestamp as ts2 
         from transfer_status_to_ethereum_v2 join inbound_message_dispatched_on_ethereum 
         on transfer_status_to_ethereum_v2.message_id = inbound_message_dispatched_on_ethereum.message_id
-        order by ts1 desc limit ${lastest}
+        order by ts1 desc limit $1
     )
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_v2_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query);
+    const result: [ElapseResult] = await manager.query(query, [lastest]);
     return result[0];
   }
 
