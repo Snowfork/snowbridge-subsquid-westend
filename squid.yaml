@@ -50,6 +50,11 @@ deploy:
         RPC_MYTHOS: "wss://polkadot-mythos-rpc.polkadot.io"
         START_BLOCK_MYTHOS: 2542302
       cmd: ["sqd", "process:parachain:mythos"]
+    - name: neuroweb-processor
+      env:
+        RPC_NEUROWEB: "wss://parachain-rpc.origin-trail.network"
+        START_BLOCK_NEUROWEB: 10996914
+      cmd: ["sqd", "process:parachain:neuroweb"]
     - name: kusama-assethub-processor
       env:
         RPC_KUSAMA_ASSETHUB: "wss://asset-hub-kusama-rpc.n.dwellir.com"

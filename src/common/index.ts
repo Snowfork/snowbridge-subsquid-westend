@@ -27,6 +27,8 @@ export const WestendFrequencyParaId = 2313;
 
 export const PaseoNeurowebParaId = 2043;
 
+export const PolkadotNeurowebParaId = 2043;
+
 export const KusamaNetwork = "kusama";
 
 export const PolkadotNetwork = "polkadot";
