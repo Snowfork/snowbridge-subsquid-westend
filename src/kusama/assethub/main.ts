@@ -13,11 +13,9 @@ import {
   BridgeHubParaId,
   findTokenAddress,
   toSubscanEventID,
-  ksmTokenLocationString,
-  dotTokenLocationString,
   KusamaNetwork,
   PolkadotNetwork,
-  ksmTokenLocationFromPolkadotAH,
+  findTokenLocationOnSourceChain,
 } from "../../common";
 
 processor.run(
@@ -102,11 +100,12 @@ async function processKusamaEvents(ctx: ProcessorContext<Store>) {
                 } else {
                   throw new Error("Unsupported Ethereum asset format.");
                 }
-              } else if (parents === 1 && interior.__kind === "Here") {
-                // DOT
-                tokenAddress = findTokenAddress(
-                  PolkadotNetwork,
-                  dotTokenLocationString()
+              } else {
+                tokenAddress = findTokenAddress(PolkadotNetwork, tokenLocation);
+                // Get token relative to source. tokenLocation above is relative to the destination.
+                tokenLocation = findTokenLocationOnSourceChain(
+                  KusamaNetwork,
+                  tokenAddress
                 );
               }
 
@@ -131,10 +130,11 @@ async function processKusamaEvents(ctx: ProcessorContext<Store>) {
             if (asset.fun.__kind === "Fungible") {
               amount = asset.fun.value;
             }
-            tokenLocation = ksmTokenLocationFromPolkadotAH();
-            tokenAddress = findTokenAddress(
-              PolkadotNetwork,
-              ksmTokenLocationString()
+            tokenAddress = findTokenAddress(PolkadotNetwork, tokenLocation);
+            // Get token relative to source. tokenLocation above is relative to the destination.
+            tokenLocation = findTokenLocationOnSourceChain(
+              KusamaNetwork,
+              tokenAddress
             );
 
             let instruction3 = rec.message[3];

@@ -80,6 +80,17 @@ const registedAssets: any = {
     "0x769916A66fDAC0E3D57363129caac59386ea622B":
       '{"parents":1,"interior":{"__kind":"X2","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":2039}]}}',
   },
+  kusama: {
+    // DOT
+    "0x196C20DA81Fbc324EcdF55501e95Ce9f0bD84d14":
+      '{"parents":2,"interior":{"__kind":"X1","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}}]}}',
+    // KSM
+    "0x12bbfDc9e813614eEf8Dc8A2560b0EfBeaf7C2AB":
+      '{"parents":1,"interior":{"__kind":"Here"}}',
+    // WUD
+    "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5":
+      '{"parents":2,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"31337"}]}}',
+  },
   westend: {
     // WND
     "0xf50fb50d65c8c1f6c72e4d8397c984933afc8f7e":
@@ -90,7 +101,41 @@ const registedAssets: any = {
   },
 };
 
-const registedAssetsOnSourcechain: any = {
+const registeredAssetsOnSourceChain: any = {
+  polkadot: {
+    // DOT
+    "0x196C20DA81Fbc324EcdF55501e95Ce9f0bD84d14":
+      '{"parents":1,"interior":{"__kind":"Here"}}',
+    // KSM
+    "0x12bbfDc9e813614eEf8Dc8A2560b0EfBeaf7C2AB":
+      '{"parents":2,"interior":{"__kind":"X1","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Kusama"}}]}}',
+    // PINK
+    "0xa37B046782518A80e2E69056009FBD0431d36E50":
+      '{"parents":0,"interior":{"__kind":"X2","value":[{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"23"}]}}',
+    // KOL
+    "0x21FaB0eA070F162180447881D5873Cf3d57200d6":
+      '{"parents":0,"interior":{"__kind":"X2","value":[{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"86"}]}}',
+    // DED
+    "0x92262680A8d6636bbA9bFFDf484c274cA2de6400":
+      '{"parents":0,"interior":{"__kind":"X2","value":[{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"30"}]}}',
+    // WUD
+    "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5":
+      '{"parents":0,"interior":{"__kind":"X2","value":[{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"31337"}]}}',
+    // TEER
+    "0x769916A66fDAC0E3D57363129caac59386ea622B":
+      '{"parents":1,"interior":{"__kind":"X1","value":[{"__kind":"Parachain","value":2039}]}}',
+  },
+  kusama: {
+    // DOT
+    "0x196C20DA81Fbc324EcdF55501e95Ce9f0bD84d14":
+      '{"parents":2,"interior":{"__kind":"X1","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}}]}}',
+    // KSM
+    "0x12bbfDc9e813614eEf8Dc8A2560b0EfBeaf7C2AB":
+      '{"parents":1,"interior":{"__kind":"Here"}}',
+    // WUD
+    "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5":
+      '{"parents":2,"interior":{"__kind":"X4","value":[{"__kind":"GlobalConsensus","value":{"__kind":"Polkadot"}},{"__kind":"Parachain","value":1000},{"__kind":"PalletInstance","value":50},{"__kind":"GeneralIndex","value":"31337"}]}}',
+  },
   westend: {
     // Frequency
     "0x23838b1bb57cecf4422a57dd8e7f8a087b30d54f":
@@ -110,7 +155,7 @@ export const findTokenAddress = (network: string, tokenId: string): string => {
       }
     }
   }
-  assets = registedAssetsOnSourcechain[network];
+  assets = registeredAssetsOnSourceChain[network];
   if (assets) {
     for (const [key, value] of Object.entries(assets)) {
       if (normalizeString(value as string) == normalizeString(tokenId)) {
@@ -121,23 +166,15 @@ export const findTokenAddress = (network: string, tokenId: string): string => {
   return "";
 };
 
-export const findTokenAddressFromAH = (
+export const findTokenLocationOnSourceChain = (
   network: string,
-  tokenId: string
+  tokenAddress: string
 ): string => {
-  let assets: any = registedAssets[network];
+  let assets: any = registeredAssetsOnSourceChain[network];
   if (assets) {
     for (const [key, value] of Object.entries(assets)) {
-      if (normalizeString(value as string) == normalizeString(tokenId)) {
-        return key;
-      }
-    }
-  }
-  assets = registedAssetsOnSourcechain[network];
-  if (assets) {
-    for (const [key, value] of Object.entries(assets)) {
-      if (normalizeString(value as string) == normalizeString(tokenId)) {
-        return key;
+      if (key === tokenAddress) {
+        return value as string;
       }
     }
   }
@@ -146,72 +183,6 @@ export const findTokenAddressFromAH = (
 
 export const normalizeString = (str: string): string => {
   return str.replace(/\s/g, "").toLowerCase();
-};
-
-export const dotTokenLocationString = () => {
-  return stringifyLocation({
-    parents: 1,
-    interior: {
-      __kind: "X1",
-      value: [
-        {
-          __kind: "GlobalConsensus",
-          value: {
-            __kind: "Polkadot",
-          },
-        },
-      ],
-    },
-  });
-};
-
-export const ksmTokenLocationString = () => {
-  return stringifyLocation({
-    parents: 1,
-    interior: {
-      __kind: "X1",
-      value: [
-        {
-          __kind: "GlobalConsensus",
-          value: {
-            __kind: "Kusama",
-          },
-        },
-      ],
-    },
-  });
-};
-
-export const ksmTokenLocationFromPolkadotAH = () => {
-  return stringifyLocation({
-    parents: 2,
-    interior: {
-      __kind: "X1",
-      value: [
-        {
-          __kind: "GlobalConsensus",
-          value: {
-            __kind: "Kusama",
-          },
-        },
-      ],
-    },
-  });
-};
-
-export const hereLocation = () => {
-  return stringifyLocation({
-    parents: 1,
-    interior: {
-      __kind: "Here",
-    },
-  });
-};
-
-export const stringifyLocation = (location: any) => {
-  return JSON.stringify(location, (key, value) =>
-    typeof value === "bigint" ? value.toString() : value
-  );
 };
 
 export function transformBigInt(obj: any): any {

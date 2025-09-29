@@ -22,12 +22,9 @@ import {
   KusamaAssetHubParaId,
   toSubscanEventID,
   findTokenAddress,
-  ksmTokenLocationString,
-  dotTokenLocationString,
   KusamaNetwork,
   PolkadotNetwork,
-  ksmTokenLocationFromPolkadotAH,
-  hereLocation,
+  findTokenLocationOnSourceChain,
 } from "../../common";
 
 processor.run(
@@ -218,10 +215,13 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 
               if (parents === 1 && interior.__kind == "Here") {
                 // KSM
-                tokenLocation = ksmTokenLocationFromPolkadotAH();
-                tokenAddress = findTokenAddress(
+                tokenLocation = JSON.stringify(asset.id, (key, value) =>
+                  typeof value === "bigint" ? value.toString() : value
+                );
+                tokenAddress = findTokenAddress(KusamaNetwork, tokenLocation);
+                tokenLocation = findTokenLocationOnSourceChain(
                   PolkadotNetwork,
-                  ksmTokenLocationString()
+                  tokenAddress
                 );
               }
             }
@@ -271,17 +271,12 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
                 } else {
                   throw new Error("Unsupported Ethereum asset format.");
                 }
-              } else if (
-                parents === 2 &&
-                interior.__kind === "X1" &&
-                interior.value[0].__kind === "GlobalConsensus" &&
-                interior.value[0].value.__kind === "Polkadot"
-              ) {
-                // DOT
-                tokenLocation = hereLocation();
-                tokenAddress = findTokenAddress(
+              } else {
+                tokenAddress = findTokenAddress(KusamaNetwork, tokenLocation);
+                // Get token relative to source. tokenLocation above is relative to the destination.
+                tokenLocation = findTokenLocationOnSourceChain(
                   PolkadotNetwork,
-                  dotTokenLocationString()
+                  tokenAddress
                 );
               }
             }
