@@ -188,6 +188,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           rec.destination.interior.value[0].value.__kind == "Kusama" &&
           rec.destination.interior.value[1].__kind == "Parachain" &&
           rec.destination.interior.value[1].value == KusamaAssetHubParaId &&
+          rec.message[0] &&
           rec.message[0].__kind == "ReserveAssetDeposited"
         ) {
           // Destination Kusama AH
