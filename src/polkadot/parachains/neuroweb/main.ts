@@ -28,6 +28,7 @@ processor.run(
   }),
   async (ctx) => {
     await processOutboundEvents(ctx);
+    await processOutboundEventsWithNativeAssetAsFee(ctx);
     await processInboundEvents(ctx);
   }
 );
@@ -311,3 +312,117 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     await ctx.store.save(transfersToPolkadot);
   }
 }
+
+async function processOutboundEventsWithNativeAssetAsFee(
+  ctx: ProcessorContext<Store>
+) {
+  let transfersToEthereum: TransferStatusToEthereum[] = [];
+  for (let block of ctx.blocks) {
+    for (let event of block.events) {
+      if (event.name == events.polkadotXcm.sent.name) {
+        let rec: {
+          origin: V4Location;
+          destination: V4Location;
+          messageId: Bytes;
+          message: V4Instruction[];
+        };
+        if (events.polkadotXcm.sent.v145.is(event)) {
+          rec = events.polkadotXcm.sent.v145.decode(event);
+        } else {
+          throw Object.assign(new Error("Unsupported spec"), event);
+        }
+        // Filter message which contains instructions:
+        // ENA:[ReceiveTeleportedAsset,BuyExecution,WithdrawAsset,ClearOrigin,SetAppendix,InitiateReserveWithdraw,SetTopic]
+        if (rec.message.length < 7) {
+          continue;
+        }
+        let amount: bigint;
+        let senderAddress: Bytes = "";
+        let tokenAddress: Bytes = "";
+        let tokenLocation: Bytes = "";
+        let destinationAddress: Bytes = "";
+        let messageId: Bytes = "";
+        // Filter message destination to AH
+        if (!isDestinationToAssetHub(rec.destination)) {
+          continue;
+        }
+
+        // Filter transfer PNA|ENA with destination to Ethereum
+        let transferInstruction = rec.message[5];
+        let transferENAtoEthereum =
+          matchReserveTransferENAToEthereum(transferInstruction);
+        let transferPNAtoEthereum =
+          matchReserveTransferPNAToEthereum(transferInstruction);
+        if (!transferENAtoEthereum && !transferPNAtoEthereum) {
+          continue;
+        }
+
+        // Get sender address
+        if (rec.origin.interior.__kind == "X1") {
+          let val = rec.origin.interior.value[0];
+          if (val.__kind == "AccountId32") {
+            senderAddress = val.id;
+          } else if (val.__kind == "AccountKey20") {
+            senderAddress = val.key;
+          }
+        }
+        if (!senderAddress) {
+          throw new Error("no sender address");
+        }
+        // Get tokenAddress and tokenAmount at WithdrawAsset instruction
+        // Asset with index 0 is the transferred asset
+        let assetInstruction = rec.message[2];
+        let ethereumAsset = matchToEthereumAsset(assetInstruction);
+        if (!ethereumAsset) {
+          throw new Error("to ethereum unkown token info");
+        }
+        tokenAddress = ethereumAsset.address;
+        tokenLocation = ethereumAsset.location;
+        amount = ethereumAsset.amount;
+
+        // Get beneficiary from the inner InitiateReserveWithdraw
+        let ethreumBeneficiary = matchEthereumBeneficiary(transferInstruction);
+        destinationAddress = ethreumBeneficiary;
+        if (!destinationAddress) {
+          throw new Error("no destination address");
+        }
+
+        // Get messageId from SetTopic
+        let topicInstruction = rec.message[6];
+        if (topicInstruction.__kind == "SetTopic") {
+          messageId = topicInstruction.value;
+        }
+        if (!messageId) {
+          throw new Error("no message id in SetTopic instruction");
+        }
+
+        let transferToEthereum = new TransferStatusToEthereum({
+          id: messageId!,
+          txHash: event.extrinsic?.hash,
+          blockNumber: block.header.height,
+          timestamp: new Date(block.header.timestamp!),
+          messageId: messageId!,
+          tokenAddress: tokenAddress,
+          tokenLocation: tokenLocation,
+          sourceParaId: PolkadotNeurowebParaId,
+          senderAddress: senderAddress!,
+          destinationAddress: destinationAddress!,
+          amount: amount!,
+          status: TransferStatusEnum.Pending,
+        });
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+          id: transferToEthereum.messageId,
+        });
+        if (!transfer) {
+          transfersToEthereum.push(transferToEthereum);
+        }
+      }
+    }
+  }
+
+  if (transfersToEthereum.length > 0) {
+    ctx.log.debug("saving transfer messages to ethereum");
+    await ctx.store.save(transfersToEthereum);
+  }
+}
+
