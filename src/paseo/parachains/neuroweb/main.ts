@@ -46,11 +46,15 @@ const isDestinationToAssetHub = (destination: V4Location): boolean => {
 };
 
 const matchToEthereumAsset = (
-  instruction: V4Instruction
+  instruction: V4Instruction,
+  assetIndex: number = 1
 ): ToEthereumAsset | undefined => {
   let ethereumAsset;
-  if (instruction.__kind == "WithdrawAsset" && instruction.value.length > 1) {
-    let asset = instruction.value[1];
+  if (
+    instruction.__kind == "WithdrawAsset" &&
+    instruction.value.length > assetIndex
+  ) {
+    let asset = instruction.value[assetIndex];
     if (asset.fun.__kind == "Fungible") {
       let location = JSON.stringify(asset.id, (key, value) =>
         typeof value === "bigint" ? value.toString() : value
@@ -372,9 +376,9 @@ async function processOutboundEventsWithNativeAssetAsFee(
         // Get tokenAddress and tokenAmount at WithdrawAsset instruction
         // Asset with index 0 is the transferred asset
         let assetInstruction = rec.message[2];
-        let ethereumAsset = matchToEthereumAsset(assetInstruction);
+        let ethereumAsset = matchToEthereumAsset(assetInstruction, 0);
         if (!ethereumAsset) {
-          throw new Error("to ethereum unkown token info");
+          throw new Error("nativeFee: to ethereum unkown token info");
         }
         tokenAddress = ethereumAsset.address;
         tokenLocation = ethereumAsset.location;
@@ -425,4 +429,3 @@ async function processOutboundEventsWithNativeAssetAsFee(
     await ctx.store.save(transfersToEthereum);
   }
 }
-

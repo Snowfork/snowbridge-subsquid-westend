@@ -28,7 +28,7 @@ deploy:
     - name: neuroweb-processor
       env:
         RPC_NEUROWEB: "wss://parachain-testnet-rpc.origin-trail.network/"
-        START_BLOCK_NEUROWEB: 8953948
+        START_BLOCK_NEUROWEB: 9349000
       cmd: ["sqd", "process:paseo:parachain:neuroweb"]
     - name: post-processor
       env:
