@@ -238,6 +238,8 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           rec = events.messageQueue.processed.v1002000.decode(event);
         } else if (events.messageQueue.processingFailed.v1002000.is(event)) {
           rec = events.messageQueue.processingFailed.v1002000.decode(event);
+        } else if (events.messageQueue.processingFailed.v1003000.is(event)) {
+          rec = events.messageQueue.processingFailed.v1003000.decode(event);
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
         }
