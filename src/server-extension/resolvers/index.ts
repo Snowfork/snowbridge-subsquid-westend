@@ -98,7 +98,8 @@ export class TransferElapseResolver {
   @Query(() => [ElapseResultNullable])
   async toEthereumUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
     const manager = await this.tx();
-    const query = `select EXTRACT(EPOCH FROM (NOW() - timestamp)) as elapse from outbound_message_accepted_on_bridge_hub where nonce = (select (max(nonce) + 1) from inbound_message_dispatched_on_ethereum)`;
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum where transfer_status_to_ethereum.status = 0 and transfer_status_to_ethereum.timestamp > NOW() - INTERVAL '7 days';
+`;
     const result: ElapseResultNullable[] = await manager.query(query);
     return result;
   }
@@ -106,7 +107,8 @@ export class TransferElapseResolver {
   @Query(() => [ElapseResultNullable])
   async toPolkadotUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
     const manager = await this.tx();
-    const query = `select EXTRACT(EPOCH FROM (NOW() - timestamp)) as elapse from outbound_message_accepted_on_ethereum where nonce = (select (max(nonce) + 1) from inbound_message_received_on_bridge_hub)`;
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot where transfer_status_to_polkadot.status = 0 and transfer_status_to_polkadot.timestamp > NOW() - INTERVAL '7 days';
+`;
     const result: ElapseResultNullable[] = await manager.query(query);
     return result;
   }
@@ -159,10 +161,15 @@ export class TransferElapseResolver {
     return result[0];
   }
 
+  // Todo: Add a filter to drop spammy transfers with very low fee (in Ether) which don’t attract relayers. — e.g.
+  // transfer_status_to_ethereum_v2.fee_amount > 0.2$. However, this requires
+  // consideration of the transfer's context, as it may inadvertently filter out legitimate transactions.
+  // For now, just use a shorter time window of 3 days as a temporary solution,
+  // once we have a better way to identify spam transfers, we can update this query
   @Query(() => [ElapseResultNullable])
   async toEthereumV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
     const manager = await this.tx();
-    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum_v2 where transfer_status_to_ethereum_v2.status = 0`;
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum_v2 where transfer_status_to_ethereum_v2.status = 0 and transfer_status_to_ethereum_v2.timestamp > NOW() - INTERVAL '3 days'`;
     const result: ElapseResultNullable[] = await manager.query(query);
     return result;
   }
@@ -170,7 +177,7 @@ export class TransferElapseResolver {
   @Query(() => [ElapseResultNullable])
   async toPolkadotV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
     const manager = await this.tx();
-    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot_v2 where transfer_status_to_polkadot_v2.status = 0`;
+    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot_v2 where transfer_status_to_polkadot_v2.status = 0 and transfer_status_to_polkadot_v2.timestamp > NOW() - INTERVAL '3 days'`;
     const result: ElapseResultNullable[] = await manager.query(query);
     return result;
   }
