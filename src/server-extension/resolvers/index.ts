@@ -25,6 +25,8 @@ export class ChainStatus {
   name!: string;
   @Field(() => Number, { nullable: false })
   height!: number;
+  @Field(() => Number, { nullable: true })
+  paraid: number | null = null;
 }
 
 @Resolver()
@@ -183,6 +185,24 @@ export class TransferElapseResolver {
   }
 }
 
+export const ProcessorRegistry: { [key: number]: any } = {
+  2034: {
+    paraid: 2034,
+    schema: "hydration_processor",
+    name: "hydration",
+  },
+  2043: {
+    paraid: 2043,
+    schema: "polkadot_neuroweb_processor",
+    name: "neuroweb",
+  },
+  3369: {
+    schema: "mythos_processor",
+    paraid: 3369,
+    name: "mythos",
+  },
+};
+
 @Resolver()
 export class SyncStatusResolver {
   constructor(private tx: () => Promise<EntityManager>) {}
@@ -210,6 +230,23 @@ export class SyncStatusResolver {
       result = result.concat(kusama_assethub_status);
     }
     return result;
+  }
+
+  @Query(() => [ChainStatus])
+  async latestBlocksOfParachain(
+    @Arg("paraid", {
+      nullable: false,
+    })
+    paraid: number
+  ): Promise<ChainStatus | undefined> {
+    let processor: any = ProcessorRegistry[paraid];
+    if (!processor) {
+      return;
+    }
+    const manager = await this.tx();
+    let query = `select '${processor.name}' as name, ${processor.paraid} as paraid, (SELECT get_sync_status('${processor.schema}') as height);`;
+    let status: ChainStatus = await manager.query(query);
+    return status;
   }
 }
 
