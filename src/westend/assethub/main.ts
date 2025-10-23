@@ -474,8 +474,15 @@ async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
             }
           }
 
-          // Extract InitiateTransfer instruction from the third or fourth instruction of the XCM (the extra one being ExchangeAsset)
-          let transferInstruction = instructions[3];
+          if (instructions.length < 3) {
+            throw new Error("Invalid transfer instructions length");
+          }
+
+          // Extract InitiateTransfer instruction from the instructions of the XCM (the extra one being ExchangeAsset)
+          let transferInstruction = instructions[2];
+          if (transferInstruction.__kind != "InitiateTransfer") {
+            transferInstruction = instructions[3];
+          }
           if (transferInstruction.__kind != "InitiateTransfer") {
             transferInstruction = instructions[4];
           }
@@ -507,7 +514,10 @@ async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
               // For native Ether
               else if (
                 asset.__kind == "ReserveWithdraw" &&
-                transferedAsset.id.interior.__kind == "Here"
+                (transferedAsset.id.interior.__kind == "Here" ||
+                  (transferedAsset.id.interior.__kind == "X1" &&
+                    transferedAsset.id.interior.value[0].value.__kind ==
+                      "Ethereum"))
               ) {
                 tokenAddress = "0x0000000000000000000000000000000000000000";
               }
