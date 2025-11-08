@@ -17,7 +17,7 @@ deploy:
       cmd: ["sqd", "process:ethereum:westend"]
     - name: bridgehub-processor
       env:
-        RPC_BRIDGEHUB: "wss://bridge-hub-westend-rpc.dwellir.com"
+        RPC_BRIDGEHUB: "wss://bridge-hub-westend-rpc.n.dwellir.com"
         START_BLOCK_BRIDGEHUB: 6000000
       cmd: ["sqd", "process:bridgehub:westend"]
     - name: assethub-processor
