@@ -273,26 +273,32 @@ async function processOutboundV2Events(ctx: Context) {
         outboundMessages.push(outboundMessageAccepted);
         // Todo: Initially, we may allow only one asset to follow V1. Supporting multiple assets
         // later would require schema changes
-        let asset = payload.assets[0];
-        let tokenRawData = asset.data;
-        let decodedToken,
-          tokenAddress: string,
-          tokenID: string,
+        let tokenAddress: string,
+          tokenID: string = "",
           tokenAmount: bigint;
-        if (asset.kind == 0) {
-          decodedToken = abiCoder.decode(localAssetType, tokenRawData);
-          tokenAddress = decodedToken[0];
-          tokenAmount = decodedToken[1];
-          tokenID = "";
+        let asset = payload.assets[0];
+        // Ethereum native asset transfer
+        if (!asset) {
+          tokenAddress = "0x0000000000000000000000000000000000000000";
+          tokenAmount = payload.value;
         } else {
-          decodedToken = abiCoder.decode(foreignAssetType, tokenRawData);
-          tokenID = decodedToken[0];
-          tokenAddress = Object.keys(assets)
-            .map((t) => assets[t])
-            .find((asset) =>
-              asset.foreignId?.toLowerCase().startsWith(tokenID.toLowerCase())
-            )?.token;
-          tokenAmount = decodedToken[1];
+          let tokenRawData = asset.data;
+          let decodedToken;
+          if (asset.kind == 0) {
+            decodedToken = abiCoder.decode(localAssetType, tokenRawData);
+            tokenAddress = decodedToken[0];
+            tokenAmount = decodedToken[1];
+            tokenID = "";
+          } else {
+            decodedToken = abiCoder.decode(foreignAssetType, tokenRawData);
+            tokenID = decodedToken[0];
+            tokenAddress = Object.keys(assets)
+              .map((t) => assets[t])
+              .find((asset) =>
+                asset.foreignId?.toLowerCase().startsWith(tokenID.toLowerCase())
+              )?.token;
+            tokenAmount = decodedToken[1];
+          }
         }
         transfersToPolkadot.push(
           new TransferStatusToPolkadotV2({
