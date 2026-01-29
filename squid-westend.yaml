@@ -25,11 +25,11 @@ deploy:
         RPC_ASSETHUB: ${{ secrets.RPC_WESTEND_ASSETHUB }}
         START_BLOCK_ASSETHUB: 9102740
       cmd: ["sqd", "process:assethub:westend"]
-    - name: frequency-processor
-      env:
-        RPC_FREQUENCY: ${{ secrets.RPC_FREQUENCY }}
-        START_BLOCK_ASSETHUB: 333000
-      cmd: ["sqd", "process:westend:parachain:frequency"]
+    # - name: frequency-processor
+    #   env:
+    #     RPC_FREQUENCY: ${{ secrets.RPC_FREQUENCY }}
+    #     START_BLOCK_ASSETHUB: 333000
+    #   cmd: ["sqd", "process:westend:parachain:frequency"]
     - name: post-processor
       env:
         EXCLUDE_KUSAMA: "true"

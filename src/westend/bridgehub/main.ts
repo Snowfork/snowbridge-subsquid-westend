@@ -4,8 +4,6 @@ import {
   InboundMessageReceivedOnBridgeHub,
   MessageProcessedOnPolkadot,
   OutboundMessageAcceptedOnBridgeHub,
-  TransferStatusToEthereum,
-  TransferStatusToPolkadot,
   TransferStatusToEthereumV2,
   TransferStatusToPolkadotV2,
 } from "../../model";
@@ -36,12 +34,12 @@ processor.run(
     await processOutboundEvents(ctx);
     await processInboundV2Events(ctx);
     await processOutboundV2Events(ctx);
-  }
+  },
 );
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let inboundMessages: InboundMessageReceivedOnBridgeHub[] = [],
-    transfersToPolkadot: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadotV2[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumInboundQueue.messageReceived.name) {
@@ -63,7 +61,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
           txHash: event.extrinsic?.hash,
         });
         inboundMessages.push(message);
-        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
           id: message.messageId,
         });
         if (transfer!) {
@@ -89,7 +87,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
   let outboundMessages: OutboundMessageAcceptedOnBridgeHub[] = [],
     processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+    transfersToEthereum: TransferStatusToEthereumV2[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.ethereumOutboundQueue.messageAccepted.name) {
@@ -111,7 +109,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
         });
         outboundMessages.push(message);
 
-        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToEthereumV2, {
           id: message.messageId,
         });
         if (transfer!) {
@@ -200,7 +198,7 @@ async function processInboundV2Events(ctx: ProcessorContext<Store>) {
         if (events.ethereumInboundQueueV2.messageReceived.v1019000.is(event)) {
           rec =
             events.ethereumInboundQueueV2.messageReceived.v1019000.decode(
-              event
+              event,
             );
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);
@@ -248,7 +246,7 @@ async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
         if (events.ethereumOutboundQueueV2.messageAccepted.v1019000.is(event)) {
           rec =
             events.ethereumOutboundQueueV2.messageAccepted.v1019000.decode(
-              event
+              event,
             );
         } else {
           throw Object.assign(new Error("Unsupported spec"), event);

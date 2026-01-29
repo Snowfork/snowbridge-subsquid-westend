@@ -2,8 +2,6 @@ import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
 import {
   MessageProcessedOnPolkadot,
-  TransferStatusToPolkadot,
-  TransferStatusToEthereum,
   TransferStatusToPolkadotV2,
   TransferStatusToEthereumV2,
 } from "../../model";
@@ -47,15 +45,15 @@ processor.run(
     await processOutboundEvents(ctx);
     await processInboundV2Events(ctx);
     await processOutboundV2Events(ctx);
-  }
+  },
 );
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
-  let transfersToEthereum: TransferStatusToEthereum[] = [],
+  let transfersToEthereum: TransferStatusToEthereumV2[] = [],
     forwardMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
     let xcmpMessageSent = false;
-    let transfers: TransferStatusToEthereum[] = [];
+    let transfers: TransferStatusToEthereumV2[] = [];
     let messagesInBlock: MessageProcessedOnPolkadot[] = [];
     for (let event of block.events) {
       if (event.name == events.xcmpQueue.xcmpMessageSent.name) {
@@ -154,7 +152,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           ) {
             let asset = instruction0.value[0];
             tokenLocation = JSON.stringify(asset.id, (key, value) =>
-              typeof value === "bigint" ? value.toString() : value
+              typeof value === "bigint" ? value.toString() : value,
             );
             if (asset.fun.__kind == "Fungible") {
               amount = asset.fun.value;
@@ -193,7 +191,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
             }
           }
 
-          let transferToEthereum = new TransferStatusToEthereum({
+          let transferToEthereum = new TransferStatusToEthereumV2({
             id: messageId,
             txHash: event.extrinsic?.hash,
             blockNumber: block.header.height,
@@ -215,10 +213,10 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     if (transfers.length) {
       for (let transfer of transfers) {
         let transferStatus = await ctx.store.findOneBy(
-          TransferStatusToEthereum,
+          TransferStatusToEthereumV2,
           {
             id: transfer.messageId,
-          }
+          },
         );
         if (!transferStatus) {
           transfersToEthereum.push(transfer);
@@ -228,7 +226,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
     // Start from 3rd Parachain
     if (xcmpMessageSent) {
       for (let messageForwarded of messagesInBlock) {
-        let transfer = await ctx.store.findOneBy(TransferStatusToEthereum, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToEthereumV2, {
           id: messageForwarded.messageId,
         });
         if (transfer!) {
@@ -254,7 +252,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 }
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
-  let transfersToPolkadot: TransferStatusToPolkadot[] = [],
+  let transfersToPolkadot: TransferStatusToPolkadotV2[] = [],
     processedMessages: MessageProcessedOnPolkadot[] = [];
   for (let block of ctx.blocks) {
     let processedMessagesInBlock: MessageProcessedOnPolkadot[] = [];
@@ -300,7 +298,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
     if (processedMessagesInBlock.length) {
       for (let processedMessage of processedMessagesInBlock) {
         processedMessages.push(processedMessage);
-        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
           id: processedMessage.messageId,
         });
         if (transfer!) {
@@ -497,7 +495,7 @@ async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
           ) {
             let transferedAsset = asset.value.value[0];
             tokenLocation = JSON.stringify(transferedAsset.id, (key, value) =>
-              typeof value === "bigint" ? value.toString() : value
+              typeof value === "bigint" ? value.toString() : value,
             );
             if (transferedAsset.fun.__kind == "Fungible") {
               amount = transferedAsset.fun.value;
@@ -566,7 +564,7 @@ async function processOutboundV2Events(ctx: ProcessorContext<Store>) {
           TransferStatusToEthereumV2,
           {
             id: transfer.messageId,
-          }
+          },
         );
         if (!transferStatus) {
           transfersToEthereum.push(transfer);

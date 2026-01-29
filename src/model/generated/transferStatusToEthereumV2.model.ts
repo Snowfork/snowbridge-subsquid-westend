@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_, BooleanColumn as BooleanColumn_} from "@subsquid/typeorm-store"
 import {MessageProcessedOnPolkadot} from "./messageProcessedOnPolkadot.model"
 import {OutboundMessageAcceptedOnBridgeHub} from "./outboundMessageAcceptedOnBridgeHub.model"
 import {InboundMessageDispatchedOnEthereum} from "./inboundMessageDispatchedOnEthereum.model"
@@ -57,6 +57,9 @@ export class TransferStatusToEthereumV2 {
     @BigIntColumn_({nullable: true})
     amount!: bigint | undefined | null
 
+    @StringColumn_({nullable: true})
+    channelId!: string | undefined | null
+
     @Index_()
     @ManyToOne_(() => MessageProcessedOnPolkadot, {nullable: true})
     toAssetHubMessageQueue!: MessageProcessedOnPolkadot | undefined | null
@@ -75,4 +78,10 @@ export class TransferStatusToEthereumV2 {
 
     @StringColumn_({nullable: true})
     claimer!: string | undefined | null
+
+    @BigIntColumn_({nullable: true})
+    fee!: bigint | undefined | null
+
+    @BooleanColumn_({nullable: true})
+    fromV1!: boolean | undefined | null
 }
