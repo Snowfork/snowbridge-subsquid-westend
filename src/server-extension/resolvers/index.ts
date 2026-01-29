@@ -2,8 +2,11 @@ import "reflect-metadata";
 import { Arg, Field, ObjectType, Query, Resolver } from "type-graphql";
 import type { EntityManager } from "typeorm";
 
-const AssetHubChannelId =
-  "0xc173fac324158e77fb5840738a1a541f633cbec8884c6a601c567d2b376a0539";
+function validateLatest(latest: number): void {
+  if (!Number.isInteger(latest)) {
+    throw new Error("Invalid latest parameter: must be an integer");
+  }
+}
 
 const latestTransfers = 20;
 
@@ -29,100 +32,26 @@ export class ChainStatus {
   paraid: number | null = null;
 }
 
+@ObjectType()
+export class MaxResult {
+  @Field(() => Number, { nullable: false })
+  max!: number;
+}
+
 @Resolver()
 export class TransferElapseResolver {
   constructor(private tx: () => Promise<EntityManager>) {}
 
   @Query(() => ElapseResult)
-  async toPolkadotElapse(
-    @Arg("channelId", {
-      nullable: true,
-      defaultValue: AssetHubChannelId,
-    })
-    channelId: string,
-    @Arg("lastest", {
-      nullable: true,
-      defaultValue: latestTransfers,
-    })
-    lastest: number
-  ): Promise<ElapseResult> {
-    const manager = await this.tx();
-
-    const query = `with to_polkadot_elapse as
-    (
-        select transfer_status_to_polkadot.timestamp as ts1, message_processed_on_polkadot.timestamp as ts2 
-        from transfer_status_to_polkadot join message_processed_on_polkadot 
-        on transfer_status_to_polkadot.message_id = message_processed_on_polkadot.message_id
-        where transfer_status_to_polkadot.channel_id = $1 order by ts1 desc limit $2
-    )
-    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_elapse
-    `;
-
-    const result: [ElapseResult] = await manager.query(query, [
-      channelId,
-      lastest,
-    ]);
-    return result[0];
-  }
-
-  @Query(() => ElapseResult)
-  async toEthereumElapse(
-    @Arg("channelId", {
-      nullable: true,
-      defaultValue: AssetHubChannelId,
-    })
-    channelId: string,
-    @Arg("lastest", {
-      nullable: true,
-      defaultValue: latestTransfers,
-    })
-    lastest: number
-  ): Promise<ElapseResult> {
-    const manager = await this.tx();
-
-    const query = `with to_ethereum_elapse as
-    (
-        select transfer_status_to_ethereum.timestamp as ts1, inbound_message_dispatched_on_ethereum.timestamp as ts2 
-        from transfer_status_to_ethereum join inbound_message_dispatched_on_ethereum 
-        on transfer_status_to_ethereum.message_id = inbound_message_dispatched_on_ethereum.message_id
-        where transfer_status_to_ethereum.channel_id = $1 order by ts1 desc limit $2
-    )
-    SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_elapse
-    `;
-
-    const result: [ElapseResult] = await manager.query(query, [
-      channelId,
-      lastest,
-    ]);
-    return result[0];
-  }
-
-  @Query(() => [ElapseResultNullable])
-  async toEthereumUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
-    const manager = await this.tx();
-    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum where transfer_status_to_ethereum.status = 0 and transfer_status_to_ethereum.timestamp > NOW() - INTERVAL '7 days';
-`;
-    const result: ElapseResultNullable[] = await manager.query(query);
-    return result;
-  }
-
-  @Query(() => [ElapseResultNullable])
-  async toPolkadotUndeliveredTimeout(): Promise<ElapseResultNullable[]> {
-    const manager = await this.tx();
-    const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot where transfer_status_to_polkadot.status = 0 and transfer_status_to_polkadot.timestamp > NOW() - INTERVAL '7 days';
-`;
-    const result: ElapseResultNullable[] = await manager.query(query);
-    return result;
-  }
-
-  @Query(() => ElapseResult)
   async toPolkadotV2Elapse(
-    @Arg("lastest", {
+    @Arg("latest", {
       nullable: true,
       defaultValue: latestTransfers,
     })
-    lastest: number
+    latest: number,
   ): Promise<ElapseResult> {
+    validateLatest(latest);
+
     const manager = await this.tx();
 
     const query = `with to_polkadot_v2_elapse as
@@ -135,18 +64,20 @@ export class TransferElapseResolver {
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_polkadot_v2_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query, [lastest]);
+    const result: [ElapseResult] = await manager.query(query, [latest]);
     return result[0];
   }
 
   @Query(() => ElapseResult)
   async toEthereumV2Elapse(
-    @Arg("lastest", {
+    @Arg("latest", {
       nullable: true,
       defaultValue: latestTransfers,
     })
-    lastest: number
+    latest: number,
   ): Promise<ElapseResult> {
+    validateLatest(latest);
+
     const manager = await this.tx();
 
     const query = `with to_ethereum_v2_elapse as
@@ -159,29 +90,58 @@ export class TransferElapseResolver {
     SELECT EXTRACT(EPOCH FROM (percentile_disc(0.7) WITHIN GROUP (ORDER BY ts2 - ts1))) as elapse FROM to_ethereum_v2_elapse
     `;
 
-    const result: [ElapseResult] = await manager.query(query, [lastest]);
+    const result: [ElapseResult] = await manager.query(query, [latest]);
     return result[0];
   }
 
-  // Todo: Add a filter to drop spammy transfers with very low fee (in Ether) which don’t attract relayers. — e.g.
-  // transfer_status_to_ethereum_v2.fee_amount > 0.2$. However, this requires
-  // consideration of the transfer's context, as it may inadvertently filter out legitimate transactions.
-  // For now, just use a shorter time window of 3 days as a temporary solution,
-  // once we have a better way to identify spam transfers, we can update this query
-  @Query(() => [ElapseResultNullable])
-  async toEthereumV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+  @Query(() => ElapseResultNullable)
+  async toEthereumV2UndeliveredTimeout(): Promise<ElapseResultNullable> {
     const manager = await this.tx();
     const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_ethereum_v2 where transfer_status_to_ethereum_v2.status = 0 and transfer_status_to_ethereum_v2.timestamp > NOW() - INTERVAL '3 days'`;
     const result: ElapseResultNullable[] = await manager.query(query);
-    return result;
+    return result[0];
   }
 
-  @Query(() => [ElapseResultNullable])
-  async toPolkadotV2UndeliveredTimeout(): Promise<ElapseResultNullable[]> {
+  @Query(() => ElapseResultNullable)
+  async toPolkadotV2UndeliveredTimeout(): Promise<ElapseResultNullable> {
     const manager = await this.tx();
     const query = `select max(EXTRACT(EPOCH FROM (NOW() - timestamp))) as elapse from transfer_status_to_polkadot_v2 where transfer_status_to_polkadot_v2.status = 0 and transfer_status_to_polkadot_v2.timestamp > NOW() - INTERVAL '3 days'`;
     const result: ElapseResultNullable[] = await manager.query(query);
-    return result;
+    return result[0];
+  }
+
+  @Query(() => MaxResult)
+  async toPolkadotV2LastDelivered(
+    @Arg("latest", {
+      nullable: false,
+    })
+    latest: number,
+  ): Promise<MaxResult> {
+    validateLatest(latest);
+
+    const manager = await this.tx();
+
+    const query = `SELECT max(nonce) as max FROM transfer_status_to_polkadot_v2 where status=1 and nonce<=$1 and from_v1 is NULL`;
+
+    const result: MaxResult[] = await manager.query(query, [latest]);
+    return result[0];
+  }
+
+  @Query(() => MaxResult)
+  async toEthereumV2LastDelivered(
+    @Arg("latest", {
+      nullable: false,
+    })
+    latest: number,
+  ): Promise<MaxResult> {
+    validateLatest(latest);
+
+    const manager = await this.tx();
+
+    const query = `SELECT max(nonce) as max FROM transfer_status_to_ethereum_v2 where status=1 and nonce<=$1 and from_v1 is NULL`;
+
+    const result: MaxResult[] = await manager.query(query, [latest]);
+    return result[0];
   }
 }
 
@@ -212,7 +172,7 @@ export class SyncStatusResolver {
     @Arg("withPKBridge", {
       defaultValue: true,
     })
-    withPKBridge: boolean
+    withPKBridge: boolean,
   ): Promise<ChainStatus[]> {
     const manager = await this.tx();
     let query = `select 'assethub' as name, height FROM assethub_processor.status LIMIT 1`;
@@ -237,7 +197,7 @@ export class SyncStatusResolver {
     @Arg("paraid", {
       nullable: false,
     })
-    paraid: number
+    paraid: number,
   ): Promise<ChainStatus | undefined> {
     let processor: any = ProcessorRegistry[paraid];
     if (!processor) {
