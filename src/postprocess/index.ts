@@ -1,12 +1,12 @@
 import { createOrmConfig } from "@subsquid/typeorm-config";
 import { DataSource, IsNull, Not } from "typeorm";
 import {
-  TransferStatusToPolkadot,
-  TransferStatusToEthereum,
   MessageProcessedOnPolkadot,
   InboundMessageDispatchedOnEthereum,
   InboundMessageReceivedOnBridgeHub,
   OutboundMessageAcceptedOnBridgeHub,
+  TransferStatusToPolkadotV2,
+  TransferStatusToEthereumV2,
 } from "../model";
 import {
   AssetHubParaId,
@@ -45,8 +45,8 @@ export const postProcess = async () => {
 };
 
 const processToPolkadotOnBridgeHub = async (connection: DataSource) => {
-  let updated: TransferStatusToPolkadot[] = [];
-  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+  let updated: TransferStatusToPolkadotV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadotV2, {
     relations: {
       toBridgeHubInboundQueue: true,
     },
@@ -59,7 +59,7 @@ const processToPolkadotOnBridgeHub = async (connection: DataSource) => {
       InboundMessageReceivedOnBridgeHub,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (inboundMessage!) {
       transfer.toBridgeHubInboundQueue = inboundMessage;
@@ -73,8 +73,8 @@ const processToPolkadotOnBridgeHub = async (connection: DataSource) => {
 };
 
 const processToPolkadotOnAssetHub = async (connection: DataSource) => {
-  let updated: TransferStatusToPolkadot[] = [];
-  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+  let updated: TransferStatusToPolkadotV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadotV2, {
     relations: {
       toAssetHubMessageQueue: true,
     },
@@ -87,7 +87,7 @@ const processToPolkadotOnAssetHub = async (connection: DataSource) => {
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (processedMessage!) {
       if (transfer.destinationParaId == AssetHubParaId) {
@@ -111,8 +111,8 @@ const processToPolkadotOnAssetHub = async (connection: DataSource) => {
 };
 
 const processToPolkadotOnDestination = async (connection: DataSource) => {
-  let updated: TransferStatusToPolkadot[] = [];
-  let transfers = await connection.manager.find(TransferStatusToPolkadot, {
+  let updated: TransferStatusToPolkadotV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToPolkadotV2, {
     relations: {
       toDestination: true,
     },
@@ -127,7 +127,7 @@ const processToPolkadotOnDestination = async (connection: DataSource) => {
       {
         messageId: transfer.id,
         paraId: Not(AssetHubParaId),
-      }
+      },
     );
     if (processedMessage!) {
       transfer.toDestination = processedMessage;
@@ -146,8 +146,8 @@ const processToPolkadotOnDestination = async (connection: DataSource) => {
 };
 
 const processToEthereumForwardOnAssetHub = async (connection: DataSource) => {
-  let updated: TransferStatusToEthereum[] = [];
-  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+  let updated: TransferStatusToEthereumV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereumV2, {
     relations: {
       toAssetHubMessageQueue: true,
     },
@@ -161,7 +161,7 @@ const processToEthereumForwardOnAssetHub = async (connection: DataSource) => {
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (processedMessage!) {
       if (processedMessage.success) {
@@ -179,10 +179,10 @@ const processToEthereumForwardOnAssetHub = async (connection: DataSource) => {
 };
 
 const processToEthereumOnBridgeHubMessageQueue = async (
-  connection: DataSource
+  connection: DataSource,
 ) => {
-  let updated: TransferStatusToEthereum[] = [];
-  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+  let updated: TransferStatusToEthereumV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereumV2, {
     relations: {
       toBridgeHubMessageQueue: true,
     },
@@ -196,7 +196,7 @@ const processToEthereumOnBridgeHubMessageQueue = async (
       MessageProcessedOnPolkadot,
       {
         messageId: bridgeHubId,
-      }
+      },
     );
     if (processedMessage!) {
       if (processedMessage.success) {
@@ -214,10 +214,10 @@ const processToEthereumOnBridgeHubMessageQueue = async (
 };
 
 const processToEthereumOnBridgeHubOutboundQueue = async (
-  connection: DataSource
+  connection: DataSource,
 ) => {
-  let updated: TransferStatusToEthereum[] = [];
-  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+  let updated: TransferStatusToEthereumV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereumV2, {
     relations: {
       toBridgeHubOutboundQueue: true,
     },
@@ -230,7 +230,7 @@ const processToEthereumOnBridgeHubOutboundQueue = async (
       OutboundMessageAcceptedOnBridgeHub,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (outboundAccepted!) {
       transfer.nonce = outboundAccepted.nonce;
@@ -245,8 +245,8 @@ const processToEthereumOnBridgeHubOutboundQueue = async (
 };
 
 const processToEthereumOnDestination = async (connection: DataSource) => {
-  let updated: TransferStatusToEthereum[] = [];
-  let transfers = await connection.manager.find(TransferStatusToEthereum, {
+  let updated: TransferStatusToEthereumV2[] = [];
+  let transfers = await connection.manager.find(TransferStatusToEthereumV2, {
     relations: {
       toDestination: true,
     },
@@ -259,7 +259,7 @@ const processToEthereumOnDestination = async (connection: DataSource) => {
       InboundMessageDispatchedOnEthereum,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (inboundDispatched!) {
       if (inboundDispatched.success) {
@@ -279,26 +279,26 @@ const processToEthereumOnDestination = async (connection: DataSource) => {
 };
 
 const processToPolkadotFromKusama = async (connection: DataSource) => {
-  let updated: TransferStatusToPolkadot[] = [];
+  let updated: TransferStatusToPolkadotV2[] = [];
   let toKusamaTransfers = await connection.manager.find(
-    TransferStatusToPolkadot,
+    TransferStatusToPolkadotV2,
     {
       where: {
         status: 0,
         sourceNetwork: PolkadotNetwork,
         destinationNetwork: KusamaNetwork,
       },
-    }
+    },
   );
   let toPolkadotTransfers = await connection.manager.find(
-    TransferStatusToPolkadot,
+    TransferStatusToPolkadotV2,
     {
       where: {
         status: 0,
         sourceNetwork: KusamaNetwork,
         destinationNetwork: PolkadotNetwork,
       },
-    }
+    },
   );
   let transfers = [...toKusamaTransfers, ...toPolkadotTransfers];
   for (let transfer of transfers) {
@@ -306,7 +306,7 @@ const processToPolkadotFromKusama = async (connection: DataSource) => {
       MessageProcessedOnPolkadot,
       {
         messageId: transfer.id,
-      }
+      },
     );
     if (processedMessage!) {
       if (transfer.destinationParaId == AssetHubParaId) {

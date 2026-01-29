@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, Index as Index_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_, BooleanColumn as BooleanColumn_} from "@subsquid/typeorm-store"
 import {InboundMessageReceivedOnBridgeHub} from "./inboundMessageReceivedOnBridgeHub.model"
 import {MessageProcessedOnPolkadot} from "./messageProcessedOnPolkadot.model"
 
@@ -68,6 +68,9 @@ export class TransferStatusToPolkadotV2 {
     @BigIntColumn_({nullable: true})
     amount!: bigint | undefined | null
 
+    @StringColumn_({nullable: true})
+    channelId!: string | undefined | null
+
     @Index_()
     @ManyToOne_(() => InboundMessageReceivedOnBridgeHub, {nullable: true})
     toBridgeHubInboundQueue!: InboundMessageReceivedOnBridgeHub | undefined | null
@@ -82,4 +85,10 @@ export class TransferStatusToPolkadotV2 {
 
     @StringColumn_({nullable: true})
     claimer!: string | undefined | null
+
+    @BigIntColumn_({nullable: true})
+    fee!: bigint | undefined | null
+
+    @BooleanColumn_({nullable: true})
+    fromV1!: boolean | undefined | null
 }

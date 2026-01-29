@@ -68,56 +68,6 @@ type InboundMessageDispatchedOnEthereum @entity {
 }
 
 """
-Transfers from Ethereum to Polkadot
-"""
-type TransferStatusToPolkadot @entity {
-  id: ID!
-  messageId: String! @index
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  nonce: Int @index
-  status: Int @index
-  tokenAddress: String
-  tokenLocation: String
-  senderAddress: String
-  sourceNetwork: String
-  sourceParaId: Int
-  destinationNetwork: String
-  destinationParaId: Int
-  destinationAddress: String
-  amount: BigInt
-  channelId: String
-  toBridgeHubInboundQueue: InboundMessageReceivedOnBridgeHub
-  toAssetHubMessageQueue: MessageProcessedOnPolkadot
-  toDestination: MessageProcessedOnPolkadot
-}
-
-"""
-Transfers from Polkadot to Ethereum
-"""
-type TransferStatusToEthereum @entity {
-  id: ID!
-  messageId: String! @index
-  txHash: String! @index
-  blockNumber: Int! @index
-  timestamp: DateTime! @index
-  nonce: Int @index
-  status: Int @index
-  tokenAddress: String
-  tokenLocation: String
-  senderAddress: String
-  sourceParaId: Int
-  destinationAddress: String
-  amount: BigInt
-  channelId: String
-  toAssetHubMessageQueue: MessageProcessedOnPolkadot
-  toBridgeHubMessageQueue: MessageProcessedOnPolkadot
-  toBridgeHubOutboundQueue: OutboundMessageAcceptedOnBridgeHub
-  toDestination: InboundMessageDispatchedOnEthereum
-}
-
-"""
 V2 transfers from Ethereum to Polkadot
 """
 type TransferStatusToPolkadotV2 @entity {
@@ -138,10 +88,13 @@ type TransferStatusToPolkadotV2 @entity {
   destinationParaId: Int
   destinationAddress: String
   amount: BigInt
+  channelId: String
   toBridgeHubInboundQueue: InboundMessageReceivedOnBridgeHub
   toAssetHubMessageQueue: MessageProcessedOnPolkadot
   toDestination: MessageProcessedOnPolkadot
   claimer: String
+  fee: BigInt
+  fromV1: Boolean
 }
 
 """
@@ -161,9 +114,12 @@ type TransferStatusToEthereumV2 @entity {
   sourceParaId: Int
   destinationAddress: String
   amount: BigInt
+  channelId: String
   toAssetHubMessageQueue: MessageProcessedOnPolkadot
   toBridgeHubMessageQueue: MessageProcessedOnPolkadot
   toBridgeHubOutboundQueue: OutboundMessageAcceptedOnBridgeHub
   toDestination: InboundMessageDispatchedOnEthereum
   claimer: String
+  fee: BigInt
+  fromV1: Boolean
 }

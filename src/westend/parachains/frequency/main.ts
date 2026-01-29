@@ -2,8 +2,8 @@ import { TypeormDatabase, Store } from "@subsquid/typeorm-store";
 import { processor, ProcessorContext } from "./processor";
 import {
   MessageProcessedOnPolkadot,
-  TransferStatusToPolkadot,
-  TransferStatusToEthereum,
+  TransferStatusToEthereumV2,
+  TransferStatusToPolkadotV2,
 } from "../../../model";
 import { events } from "./types";
 import { Bytes } from "./types/support";
@@ -30,7 +30,7 @@ processor.run(
   async (ctx) => {
     await processOutboundEvents(ctx);
     await processInboundEvents(ctx);
-  }
+  },
 );
 
 const isDestinationToAssetHub = (destination: V5Location): boolean => {
@@ -46,14 +46,14 @@ const isDestinationToAssetHub = (destination: V5Location): boolean => {
 };
 
 const matchToEthereumAsset = (
-  instruction: V5Instruction
+  instruction: V5Instruction,
 ): ToEthereumAsset | undefined => {
   let toEthereumAsset;
   if (instruction.__kind == "WithdrawAsset" && instruction.value.length > 1) {
     let asset = instruction.value[1];
     if (asset.fun.__kind == "Fungible") {
       let location = JSON.stringify(asset.id, (key, value) =>
-        typeof value === "bigint" ? value.toString() : value
+        typeof value === "bigint" ? value.toString() : value,
       );
       let amount = asset.fun.value;
       if (
@@ -95,7 +95,7 @@ const matchToEthereumAsset = (
     let asset = instruction.value[0];
     if (asset.fun.__kind == "Fungible") {
       let location = JSON.stringify(asset.id, (key, value) =>
-        typeof value === "bigint" ? value.toString() : value
+        typeof value === "bigint" ? value.toString() : value,
       );
       let amount = asset.fun.value;
       // PNA
@@ -110,7 +110,7 @@ const matchToEthereumAsset = (
 };
 
 const matchReserveTransferENAToEthereum = (
-  instruction: V5Instruction
+  instruction: V5Instruction,
 ): boolean => {
   if (
     instruction.__kind == "InitiateReserveWithdraw" &&
@@ -125,7 +125,7 @@ const matchReserveTransferENAToEthereum = (
 };
 
 const matchReserveTransferPNAToEthereum = (
-  instruction: V5Instruction
+  instruction: V5Instruction,
 ): boolean => {
   if (
     instruction.__kind == "DepositReserveAsset" &&
@@ -154,7 +154,7 @@ const matchEthereumBeneficiary = (instruction: V5Instruction): string => {
 };
 
 async function processOutboundEvents(ctx: ProcessorContext<Store>) {
-  let transfersToEthereum: TransferStatusToEthereum[] = [];
+  let transfersToEthereum: TransferStatusToEthereumV2[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (event.name == events.polkadotXcm.sent.name) {
@@ -241,7 +241,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           throw new Error("no message id in SetTopic instruction");
         }
 
-        let transferToEthereum = new TransferStatusToEthereum({
+        let transferToEthereum = new TransferStatusToEthereumV2({
           id: messageId!,
           txHash: event.extrinsic?.hash,
           blockNumber: block.header.height,
@@ -255,7 +255,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
           amount: amount!,
           status: TransferStatusEnum.Pending,
         });
-        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+        let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
           id: transferToEthereum.messageId,
         });
         if (!transfer) {
@@ -273,7 +273,7 @@ async function processOutboundEvents(ctx: ProcessorContext<Store>) {
 
 async function processInboundEvents(ctx: ProcessorContext<Store>) {
   let processedMessages: MessageProcessedOnPolkadot[] = [],
-    transfersToPolkadot: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadotV2[] = [];
   for (let block of ctx.blocks) {
     for (let event of block.events) {
       if (
@@ -308,7 +308,7 @@ async function processInboundEvents(ctx: ProcessorContext<Store>) {
             eventId: toSubscanEventID(event.id),
           });
           processedMessages.push(message);
-          let transfer = await ctx.store.findOneBy(TransferStatusToPolkadot, {
+          let transfer = await ctx.store.findOneBy(TransferStatusToPolkadotV2, {
             id: message.messageId,
           });
           if (transfer!) {

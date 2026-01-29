@@ -1,10 +1,8 @@
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import {
   OutboundMessageAcceptedOnEthereum,
-  TransferStatusToPolkadot,
   TransferStatusToPolkadotV2,
   InboundMessageDispatchedOnEthereum,
-  TransferStatusToEthereum,
   TransferStatusToEthereumV2,
 } from "../../model";
 import * as gateway from "./abi/GatewayV2";
@@ -21,12 +19,12 @@ processor.run(
     await processOutboundEvents(ctx);
     await processInboundV2Events(ctx);
     await processOutboundV2Events(ctx);
-  }
+  },
 );
 
 async function processOutboundEvents(ctx: Context) {
   let outboundMessages: OutboundMessageAcceptedOnEthereum[] = [],
-    transfersToPolkadot: TransferStatusToPolkadot[] = [];
+    transfersToPolkadot: TransferStatusToPolkadotV2[] = [];
   for (let c of ctx.blocks) {
     let tokenSent;
     let outboundMessageAccepted: OutboundMessageAcceptedOnEthereum;
@@ -83,14 +81,14 @@ async function processOutboundEvents(ctx: Context) {
     ) {
       outboundMessages.push(outboundMessageAccepted);
       let transferToPolkadot = await ctx.store.findOneBy(
-        TransferStatusToPolkadot,
+        TransferStatusToPolkadotV2,
         {
           id: outboundMessageAccepted.messageId,
-        }
+        },
       );
       if (!transferToPolkadot) {
         transfersToPolkadot.push(
-          new TransferStatusToPolkadot({
+          new TransferStatusToPolkadotV2({
             id: outboundMessageAccepted.messageId,
             messageId: outboundMessageAccepted.messageId,
             txHash: outboundMessageAccepted.txHash,
@@ -104,7 +102,7 @@ async function processOutboundEvents(ctx: Context) {
             destinationAddress: tokenSent.destinationAddress,
             amount: tokenSent.amount,
             status: TransferStatusEnum.Pending,
-          })
+          }),
         );
       }
     }
@@ -119,10 +117,10 @@ async function processOutboundEvents(ctx: Context) {
 
 async function processInboundEvents(ctx: Context) {
   let inboundMessages: InboundMessageDispatchedOnEthereum[] = [],
-    transfersToEthereum: TransferStatusToEthereum[] = [];
+    transfersToEthereum: TransferStatusToEthereumV2[] = [];
   for (let c of ctx.blocks) {
     let inboundMessage: InboundMessageDispatchedOnEthereum;
-    let transferToEthreum: TransferStatusToEthereum | undefined;
+    let transferToEthreum: TransferStatusToEthereumV2 | undefined;
     for (let log of c.logs) {
       if (
         log.address == GATEWAY_ADDRESS &&
@@ -156,7 +154,7 @@ async function processInboundEvents(ctx: Context) {
       }
     }
     if (inboundMessage!) {
-      transferToEthreum = await ctx.store.findOneBy(TransferStatusToEthereum, {
+      transferToEthreum = await ctx.store.findOneBy(TransferStatusToEthereumV2, {
         id: inboundMessage.messageId,
       });
       if (transferToEthreum!) {
@@ -213,7 +211,7 @@ async function processInboundV2Events(ctx: Context) {
             TransferStatusToEthereumV2,
             {
               id: inboundMessage.messageId,
-            }
+            },
           );
           if (transferToEthreum!) {
             transferToEthreum.toDestination = inboundMessage;
@@ -295,7 +293,9 @@ async function processOutboundV2Events(ctx: Context) {
             tokenAddress = Object.keys(assets)
               .map((t) => assets[t])
               .find((asset) =>
-                asset.foreignId?.toLowerCase().startsWith(tokenID.toLowerCase())
+                asset.foreignId
+                  ?.toLowerCase()
+                  .startsWith(tokenID.toLowerCase()),
               )?.token;
             tokenAmount = decodedToken[1];
           }
@@ -314,7 +314,7 @@ async function processOutboundV2Events(ctx: Context) {
             tokenID,
             amount: tokenAmount,
             status: TransferStatusEnum.Pending,
-          })
+          }),
         );
       }
     }
