@@ -5,7 +5,8 @@
     "node": ">=16"
   },
   "scripts": {
-    "build": "rm -rf lib && tsc"
+    "build": "rm -rf lib && tsc",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@subsquid/evm-processor": "^1.27.3",
@@ -17,6 +18,7 @@
     "dotenv": "^16.4.5",
     "ethers": "^6.15.0",
     "node-cron": "^3.0.3",
+    "patch-package": "^8.0.1",
     "pg": "8.11.5",
     "reflect-metadata": "^0.2.2",
     "type-graphql": "^1.2.0-rc.1",

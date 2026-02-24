@@ -187,7 +187,7 @@
       "cmd": [
         "npx",
         "squid-substrate-metadata-explorer",
-        "--rpc=wss://asset-hub-westend-rpc.dwellir.com",
+        "--rpc=wss://asset-hub-westend-rpc.n.dwellir.com",
         "--out=versions/westend/assethub-versions.jsonl"
       ]
     },
